@@ -30,8 +30,11 @@ The file must be served from your own site (or from a server that allows cross-o
 
 ### Try the demo
 
-`index.html` shows two viewers using `models/Connector.stp`. Browsers won't load files from
-`file://`, so serve the folder:
+**Live demo: https://afkiwers.github.io/model-3d-viewer/**
+
+`index.html` shows two viewers using `models/Connector.stp`. It is published to GitHub Pages by
+`.github/workflows/pages.yml` on every push to `main`. To run it locally instead (browsers won't
+load files from `file://`), serve the folder:
 
 ```sh
 python3 -m http.server 8000
