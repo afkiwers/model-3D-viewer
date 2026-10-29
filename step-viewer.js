@@ -62,7 +62,7 @@
     downloadName: null,    // file name for the download; defaults to the name in the URL
     measure: true,         // show the ruler button
     orbit: 'free',         // 'free': turn the model any way; 'turntable': keep the up axis upright
-    gizmo: false,          // show the orientation controls (axes and step buttons) from the start
+    gizmo: false,          // show the view cube from the start
     views: true,           // show the standard views menu
     fullscreen: true,      // show the fullscreen button
     info: true,            // show the file name and overall size
@@ -101,7 +101,7 @@
 
   const ICONS = {
     home: '<path d="M3.5 11.5 12 4.5l8.5 7"/><path d="M6 10v9.5h12V10"/>',
-    axes: '<path d="M6 18 12 12M12 12V4.5M12 12l7 4"/><circle cx="5" cy="19" r="1.6"/><circle cx="12" cy="3.5" r="1.6"/><circle cx="20" cy="16.5" r="1.6"/>',
+    cube: '<path d="M12 3.5 17.5 6.5v6L12 15.5l-5.5-3v-6z"/><path d="M12 9.5 17.5 6.5M12 9.5 6.5 6.5M12 9.5v6"/><path d="M5 15.5C2.8 16.3 2 17.2 2 18c0 1.9 4.5 3.5 10 3.5s10-1.6 10-3.5c0-.8-.8-1.7-3-2.5"/>',
     views: '<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><path d="M12 12 20 7.5M12 12 4 7.5M12 12v9"/>',
     ruler: '<path d="M3.5 15.5 15.5 3.5l5 5-12 12z"/><path d="M6.5 12.5l2 2M9.5 9.5l1.5 1.5M12.5 6.5l2 2"/>',
     clear: '<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>',
@@ -167,24 +167,29 @@
 .sv-error .sv-spinner,.sv-error .sv-progress{display:none}
 .sv-error p{max-width:340px;margin:0;color:#b91c1c}
 @keyframes sv-spin{to{transform:rotate(360deg)}}
-.sv-gizmo{position:absolute;left:10px;bottom:52px;z-index:1;display:flex;align-items:center;gap:6px;padding:6px;border-radius:12px;background:var(--sv-ui-bg);
-  border:1px solid var(--sv-ui-border);box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 14px rgba(0,0,0,.08);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.sv-gizmo{position:absolute;left:6px;bottom:48px;z-index:1;width:150px;height:150px;-webkit-user-select:none;user-select:none}
 .sv-gizmo[hidden]{display:none}
-.sv-gizmo svg.sv-axes{width:96px;height:96px;display:block;cursor:grab;touch-action:none;overflow:visible}
-.sv-gizmo svg.sv-axes:active{cursor:grabbing}
-.sv-axes .sv-ring{fill:rgba(15,23,42,.04);stroke:rgba(15,23,42,.12)}
-.sv-axes line{stroke-width:2.5;stroke-linecap:round}
-.sv-axes .sv-end{cursor:pointer}
-.sv-axes .sv-end circle{stroke:#fff;stroke-width:1.5}
-.sv-axes .sv-end.sv-neg circle{fill-opacity:.35}
-.sv-axes .sv-end:hover circle{stroke:#111827;stroke-width:2}
-.sv-axes text{font:700 9px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:#fff;text-anchor:middle;dominant-baseline:central;pointer-events:none}
-.sv-pad{display:grid;grid-template-columns:repeat(3,26px);grid-auto-rows:26px;gap:2px}
-.sv-pad button{all:unset;box-sizing:border-box;display:grid;place-items:center;border-radius:6px;color:var(--sv-ui-fg);cursor:pointer}
-.sv-pad button:hover{background:rgba(15,23,42,.08)}
-.sv-pad button:focus-visible{outline:2px solid var(--sv-accent)}
-.sv-pad svg{width:16px;height:16px}
-@media (pointer:coarse){.sv-pad{grid-template-columns:repeat(3,34px);grid-auto-rows:34px}}
+.sv-cube-stage{position:absolute;inset:0;perspective:520px;touch-action:none;cursor:grab}
+.sv-cube-stage:active{cursor:grabbing}
+.sv-cube{position:absolute;inset:0;transform-style:preserve-3d}
+.sv-face,.sv-compass{position:absolute;left:50%;top:50%;box-sizing:border-box}
+.sv-face{width:62px;height:62px;margin:-31px 0 0 -31px;-webkit-backface-visibility:hidden;backface-visibility:hidden;
+  display:grid;grid-template-columns:22% 1fr 22%;grid-template-rows:22% 1fr 22%;
+  background:linear-gradient(160deg,#fbfbfc,#dde1e6);border:1px solid #9aa3ae;box-shadow:inset 0 0 0 1px rgba(255,255,255,.7)}
+.sv-face span{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+  font:700 11px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.04em;color:#4b5563}
+.sv-face i{display:block;cursor:pointer}
+.sv-face i:hover{background:rgba(59,130,246,.4)}
+.sv-compass{width:128px;height:128px;margin:-64px 0 0 -64px;border-radius:50%;border:14px solid rgba(178,186,196,.9);cursor:ew-resize;
+  box-shadow:inset 0 0 0 2.5px #3b82f6,0 0 0 1px rgba(15,23,42,.15)}
+.sv-compass{clip-path:path(evenodd,"M0 64a64 64 0 1 0 128 0a64 64 0 1 0-128 0ZM14 64a50 50 0 1 0 100 0a50 50 0 1 0-100 0Z")}
+.sv-compass:hover{border-color:rgba(150,160,172,.95)}
+.sv-compass b{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;display:grid;place-items:center;
+  font:800 11px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#374151;pointer-events:none}
+.sv-cube-btn{all:unset;position:absolute;z-index:1;width:24px;height:24px;display:grid;place-items:center;border-radius:6px;color:#6b7280;cursor:pointer}
+.sv-cube-btn:hover{color:var(--sv-ui-fg);background:rgba(15,23,42,.08)}
+.sv-cube-btn:focus-visible{outline:2px solid var(--sv-accent)}
+.sv-cube-btn svg{width:17px;height:17px}
 .sv-markers{position:absolute;inset:0;pointer-events:none}
 .sv-marker{all:unset;box-sizing:border-box;position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;display:grid;place-items:center;
   background:rgba(17,24,39,.6);border:2px solid #fff;color:#fff;font:700 12px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;cursor:pointer;pointer-events:auto;
@@ -806,6 +811,14 @@
       return { target: this.target.clone(), position: this.target.clone().add(offset), up: up.applyQuaternion(q) };
     }
 
+    // Spin about the model's up axis, like a turntable.
+    spin(angle) {
+      const up = this.viewer.upVec;
+      this.camera.position.sub(this.target).applyAxisAngle(up, angle).add(this.target);
+      this.camera.up.applyAxisAngle(up, angle);
+      this._changed();
+    }
+
     turn(yaw, pitch, roll) {
       const pose = this.poseAfterTurn(yaw, pitch, roll);
       this.camera.position.copy(pose.position);
@@ -901,11 +914,7 @@
         active = true;
       }
       if (this.autoRotate && !this.viewer._interacted) {
-        // Spin about the model's up axis, like a turntable.
-        const angle = (-this.autoRotate * DEG * dt) / 1000;
-        this.camera.position.sub(this.target).applyAxisAngle(this.viewer.upVec, angle).add(this.target);
-        this.camera.up.applyAxisAngle(this.viewer.upVec, angle);
-        this._changed();
+        this.spin((-this.autoRotate * DEG * dt) / 1000);
         active = true;
       }
       return active;
@@ -1176,7 +1185,7 @@
       });
     }
 
-    /** Show or hide the orientation controls in the bottom-left corner. */
+    /** Show or hide the view cube in the bottom-left corner. */
     setGizmo(on) {
       this.gizmo.hidden = !on;
       this.btn.gizmo.setAttribute('aria-pressed', String(!!on));
@@ -1393,7 +1402,7 @@
         this.btn[key] = b;
       };
       addBtn('home', 'Reset view', 'home', () => this.resetView());
-      addBtn('gizmo', 'Orientation controls', 'axes', () => this.setGizmo(this.gizmo.hidden), (b) => b.setAttribute('aria-pressed', 'false'));
+      addBtn('gizmo', 'View cube', 'cube', () => this.setGizmo(this.gizmo.hidden), (b) => b.setAttribute('aria-pressed', 'false'));
       if (o.views) addBtn('views', 'Standard views', 'views', () => this._toggleMenu(), (b) => b.setAttribute('aria-expanded', 'false'));
       if (o.measure) {
         addBtn('measure', 'Measure distance', 'ruler', () => this.setMeasureMode(!this.measureMode), (b) => b.setAttribute('aria-pressed', 'false'));
@@ -1819,137 +1828,136 @@
 
     // --- orientation controls ------------------------------------------------
 
+    // A view cube: faces, edges and corners are clickable views, dragging the cube turns the model
+    // freely, and dragging the compass ring spins it about the up axis. Built from CSS 3D transforms.
     _buildGizmo() {
       const g = (this.gizmo = el('div', 'sv-gizmo'));
       g.hidden = true; // shown once the model is in (see _afterLoad)
-      const svg = (this.axesSvg = svgEl('svg'));
-      svg.setAttribute('class', 'sv-axes');
-      svg.setAttribute('viewBox', '-50 -50 100 100');
-      svg.setAttribute('role', 'group');
-      svg.setAttribute('aria-label', 'Model axes. Drag to rotate, click an axis to look along it.');
-      const ring = svgEl('circle');
-      ring.setAttribute('class', 'sv-ring');
-      ring.setAttribute('r', '46');
-      svg.appendChild(ring);
-      const colors = { x: '#e5484d', y: '#30a46c', z: '#3e63dd' };
-      this.axisParts = [];
-      for (const axis of ['x', 'y', 'z']) {
-        const line = svgEl('line');
-        line.setAttribute('stroke', colors[axis]);
-        line.setAttribute('x1', 0);
-        line.setAttribute('y1', 0);
-        for (const sign of [1, -1]) {
-          const end = svgEl('g');
-          end.setAttribute('class', 'sv-end' + (sign < 0 ? ' sv-neg' : ''));
-          const label = (sign < 0 ? '−' : '') + axis.toUpperCase();
-          end.setAttribute('aria-label', 'Look from ' + label);
-          const title = svgEl('title');
-          title.textContent = 'Look from ' + label;
-          const dot = svgEl('circle');
-          dot.setAttribute('r', sign > 0 ? 9 : 7);
-          dot.setAttribute('fill', colors[axis]);
-          end.append(title, dot);
-          if (sign > 0) {
-            const text = svgEl('text');
-            text.textContent = axis.toUpperCase();
-            end.appendChild(text);
-          }
-          end.dataset.axis = axis;
-          end.dataset.sign = sign;
-          this.axisParts.push({ axis, sign, end, line: sign > 0 ? line : null, depth: 0 });
-        }
-        this.axisParts.push({ axis, sign: 0, line, end: null, depth: 0 });
-      }
-      g.appendChild(svg);
+      const stage = el('div', 'sv-cube-stage');
+      stage.setAttribute('role', 'group');
+      stage.setAttribute('aria-label', 'View cube. Click a face, edge or corner to look from there; drag to turn the model.');
+      const cube = el('div', 'sv-cube');
+      stage.appendChild(cube);
 
-      // Dragging the axes turns the model freely; a click on an axis end looks along that axis.
+      this.compass = el('div', 'sv-compass');
+      this.compass.title = 'Drag to spin the model';
+      for (const [letter, angle] of [['N', 90], ['E', 0], ['S', 270], ['W', 180]]) {
+        const b = el('b');
+        b.textContent = letter;
+        const r = 57; // middle of the ring band
+        b.style.transform = 'translate(' + (Math.cos(angle * DEG) * r).toFixed(1) + 'px,' + (-Math.sin(angle * DEG) * r).toFixed(1) + 'px)';
+        this.compass.appendChild(b);
+      }
+      cube.appendChild(this.compass);
+
+      // Faces as [view name, face normal, text right, text up], written for a Z-up model.
+      const faces = [
+        ['top', [0, 0, 1], [1, 0, 0], [0, 1, 0]],
+        ['bottom', [0, 0, -1], [1, 0, 0], [0, -1, 0]],
+        ['front', [0, -1, 0], [1, 0, 0], [0, 0, 1]],
+        ['back', [0, 1, 0], [-1, 0, 0], [0, 0, 1]],
+        ['right', [1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        ['left', [-1, 0, 0], [0, -1, 0], [0, 0, 1]],
+      ];
+      const fromZUp = (v) => (this.o.up === 'y' ? [v[0], v[2], -v[1]] : v.slice());
+      this.cubeFaces = faces.map(([name, n, u, w]) => {
+        const face = el('div', 'sv-face');
+        // 3 × 3 hit areas: the middle looks at the face, the sides at an edge, the corners at a corner.
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 3; col++) {
+            const cell = el('i');
+            const du = col - 1, dv = 1 - row;
+            cell.dataset.dir = [0, 1, 2].map((k) => n[k] + du * u[k] + dv * w[k]).join(',');
+            face.appendChild(cell);
+          }
+        }
+        const label = el('span');
+        label.textContent = VIEW_LABELS[name].toUpperCase();
+        face.appendChild(label);
+        cube.appendChild(face);
+        return { el: face, n: fromZUp(n), u: fromZUp(u), w: fromZUp(w) };
+      });
+      g.appendChild(stage);
+
+      // Dragging the cube turns the model freely; dragging the ring spins it; a click picks a view.
       let drag = null;
-      svg.addEventListener('pointerdown', (e) => {
+      stage.addEventListener('pointerdown', (e) => {
         if (!this.controls) return;
-        svg.setPointerCapture(e.pointerId);
+        stage.setPointerCapture(e.pointerId);
         this.controls.stop();
         this._interact();
-        drag = { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, end: e.target.closest('.sv-end') };
+        drag = { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, cell: e.target.closest('.sv-face i'), spin: e.target === this.compass };
       });
-      svg.addEventListener('pointermove', (e) => {
+      stage.addEventListener('pointermove', (e) => {
         if (!drag) return;
-        this.controls.rotate((e.clientX - drag.x) * 1.4, (e.clientY - drag.y) * 1.4, true);
+        const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        if (drag.spin) this.controls.spin(-dx * this.controls.rotateSpeed * 1.5);
+        else this.controls.rotate(dx * 1.4, dy * 1.4, true);
         drag.x = e.clientX;
         drag.y = e.clientY;
       });
       const end = (e) => {
         if (!drag) return;
         const moved = Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY);
-        if (moved < 4 && drag.end && e.type === 'pointerup') {
-          const dir = new THREE.Vector3();
-          dir[drag.end.dataset.axis] = Number(drag.end.dataset.sign);
-          this.setView(dir.applyQuaternion(this.model.quaternion).toArray());
+        if (moved < 4 && drag.cell && e.type === 'pointerup') {
+          const d = fromZUp(drag.cell.dataset.dir.split(',').map(Number));
+          this.setView(new THREE.Vector3().fromArray(d).applyQuaternion(this.model.quaternion).toArray());
         }
         drag = null;
       };
-      svg.addEventListener('pointerup', end);
-      svg.addEventListener('pointercancel', end);
+      stage.addEventListener('pointerup', end);
+      stage.addEventListener('pointercancel', end);
 
-      const pad = el('div', 'sv-pad');
-      const arrow = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
-      const buttons = [
-        ['Roll left', arrow('<path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/>'), 0, 0, 1],
-        ['Tilt up', arrow('<path d="m6 15 6-6 6 6"/>'), 0, 1, 0],
-        ['Roll right', arrow('<path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4h-4"/>'), 0, 0, -1],
-        ['Turn left', arrow('<path d="m15 6-6 6 6 6"/>'), 1, 0, 0],
-        ['Reset view', icon('home'), null],
-        ['Turn right', arrow('<path d="m9 6 6 6-6 6"/>'), -1, 0, 0],
-        null,
-        ['Tilt down', arrow('<path d="m6 9 6 6 6-6"/>'), 0, -1, 0],
-        null,
-      ];
-      for (const def of buttons) {
-        if (!def) {
-          pad.appendChild(el('span'));
-          continue;
-        }
-        const [label, html, yaw, pitch, roll] = def;
-        const b = el('button', null, html);
+      const button = (label, html, style, onClick) => {
+        const b = el('button', 'sv-cube-btn', html);
         b.type = 'button';
-        b.title = yaw === null ? label : label + ' 15° (Shift: 5°)';
-        b.setAttribute('aria-label', b.title);
-        b.addEventListener('click', (e) => {
+        b.title = label;
+        b.setAttribute('aria-label', label);
+        Object.assign(b.style, style);
+        b.addEventListener('click', () => {
           if (!this.controls) return;
           this._interact();
-          if (yaw === null) return this.resetView();
-          const step = (e.shiftKey ? 5 : 15) * DEG;
-          // Start from where a running step will end, so quick clicks add up exactly.
-          if (this.controls.anim) this.controls.update(this.controls.anim.t0 + this.controls.anim.ms);
-          const pose = this.controls.poseAfterTurn(yaw * step, pitch * step, roll * step);
-          this.controls.animateTo(pose.target, pose.position, 220, pose.up);
+          onClick();
         });
-        pad.appendChild(b);
-      }
-      g.appendChild(pad);
+        g.appendChild(b);
+      };
+      const roll = (sign) => {
+        // Start from where a running step will end, so quick clicks add up exactly.
+        if (this.controls.anim) this.controls.update(this.controls.anim.t0 + this.controls.anim.ms);
+        const pose = this.controls.poseAfterTurn(0, 0, sign * 90 * DEG);
+        this.controls.animateTo(pose.target, pose.position, 300, pose.up);
+      };
+      const svg = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+      button('Reset view', icon('home'), { left: '0', top: '0' }, () => this.resetView());
+      button('Roll left 90°', svg('<path d="M5 13a7 7 0 1 0 2.2-6.1"/><path d="M5 4v4.5h4.5"/>'), { right: '26px', top: '0' }, () => roll(1));
+      button('Roll right 90°', svg('<path d="M19 13a7 7 0 1 1-2.2-6.1"/><path d="M19 4v4.5h-4.5"/>'), { right: '0', top: '0' }, () => roll(-1));
     }
 
     _drawGizmo() {
       if (this.gizmo.hidden || !this.model) return;
       // Sit just above the bottom bar, however tall it is.
-      this.gizmo.style.bottom = this.el.clientHeight - this.bottom.offsetTop + 6 + 'px';
+      this.gizmo.style.bottom = this.el.clientHeight - this.bottom.offsetTop + 2 + 'px';
+      // World to screen: the camera's inverse rotation, with y flipped because CSS y points down.
       const toCamera = this.camera.quaternion.clone().invert();
-      const v = new THREE.Vector3();
-      const R = 34;
-      for (const part of this.axisParts) {
-        v.set(0, 0, 0);
-        v[part.axis] = part.sign || 1;
-        v.applyQuaternion(this.model.quaternion).applyQuaternion(toCamera);
-        const x = v.x * R, y = -v.y * R;
-        if (part.end) part.end.setAttribute('transform', 'translate(' + x.toFixed(2) + ' ' + y.toFixed(2) + ')');
-        if (part.sign === 0) {
-          part.line.setAttribute('x2', x.toFixed(2));
-          part.line.setAttribute('y2', y.toFixed(2));
-        }
-        // Lines sit just behind their own end, so ends nearer the viewer are drawn on top.
-        part.depth = v.z * (part.sign || 1) - (part.sign === 0 ? 0.01 : 0);
+      const model = this.model.quaternion;
+      const css = (v) => {
+        const c = new THREE.Vector3().fromArray(v).applyQuaternion(model).applyQuaternion(toCamera);
+        return [c.x, -c.y, c.z];
+      };
+      const matrix = (u, w, n, offset) => {
+        const U = css(u), W = css(w).map((x) => -x), N = css(n);
+        return 'matrix3d(' + [...U, 0, ...W, 0, ...N, 0, N[0] * offset, N[1] * offset, N[2] * offset, 1].map((x) => +x.toFixed(5)).join(',') + ')';
+      };
+      for (const f of this.cubeFaces) {
+        f.el.style.transform = matrix(f.u, f.w, f.n, 31);
+        // Faces turned towards the viewer are a little brighter.
+        const facing = Math.max(0, css(f.n)[2]);
+        f.el.style.filter = 'brightness(' + (0.86 + 0.14 * facing).toFixed(3) + ')';
       }
-      const order = this.axisParts.slice().sort((a, b) => a.depth - b.depth);
-      for (const part of order) this.axesSvg.appendChild(part.end || part.line);
+      const up = this.o.up === 'y' ? [0, 1, 0] : [0, 0, 1];
+      const east = [1, 0, 0];
+      const north = this.o.up === 'y' ? [0, 0, -1] : [0, 1, 0];
+      this.compass.style.transform = matrix(east, north, up, -38);
     }
 
     // --- markers -------------------------------------------------------------

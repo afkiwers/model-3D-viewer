@@ -21,8 +21,8 @@ no framework. Point it at a `.step` / `.stp` file on your server and visitors ge
 
 * **Orbit, pan and zoom** with mouse, trackpad or touch. Zoom goes towards the cursor, and a
   double-click makes that point the new centre of rotation.
-* **Orientation controls**: an X/Y/Z axis gizmo in the corner (drag it, or click an axis to look along it)
-  and buttons that turn, tilt and roll the model in exact 15° steps.
+* **A view cube** in the corner: click a face, edge or corner to look from there (26 views), drag the cube
+  to turn the model, drag the compass ring to spin it, and roll it in 90° steps.
 * **A ruler** that snaps to corners and edges and shows the distance plus ΔX / ΔY / ΔZ.
 * **Markers**: numbered hotspots that open an animated card with a title and description.
   The camera flies to each one.
@@ -61,7 +61,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `rotation` | `0,0,0` | Extra rotation of the model, in degrees about X, Y and Z. |
 | `up` | `z` | Which model axis points up: `z` (most CAD programs) or `y` (SolidWorks and some others). Sets which way the standard views face. |
 | `orbit` | `free` | How dragging turns the model. `free` turns it in any direction with no limits; `turntable` keeps the up axis upright and stops at the top and bottom. |
-| `gizmo` | `false` | Show the orientation controls from the start. Visitors can always open them with the axes button. |
+| `gizmo` | `false` | Show the view cube from the start. Visitors can always open it with the cube button in the toolbar. |
 | `units` | `mm` | Units for sizes and measurements: `mm`, `cm`, `m`, `in` or `ft`. The model is converted. |
 | `precision` | `2` | Decimal places in measurements. |
 | `download` | `true` | Show the download button. `false` hides it and blocks `viewer.download()`. Can be changed later with `viewer.setDownload()`. |
@@ -174,7 +174,7 @@ await viewer.ready;              // resolves when the model is shown, rejects if
 
 viewer.setView('front');         // or a direction: [1, -1, 0.5]
 viewer.resetView();
-viewer.setGizmo(true);           // show the orientation controls
+viewer.setGizmo(true);           // show the view cube
 viewer.getView();                // current camera as { view: [x, y, z], zoom } for data-view / data-zoom
 viewer.setMeasureMode(true);
 viewer.getMeasurements();        // [{ distance, delta: [dx, dy, dz], a, b, units }]
