@@ -24,6 +24,43 @@
     .release:focus-visible { outline: 2px solid #ef5a24; outline-offset: 2px; }
     .release span { opacity: .7; font-variant-numeric: tabular-nums; }
     .release span:empty { display: none; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .about-btn { font: inherit; font-size: 14px; font-weight: 500; padding: 7px 14px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #1f2937; cursor: pointer; }
+    .about-btn:hover { border-color: #ef5a24; color: #ef5a24; }
+    .about-btn:focus-visible { outline: 2px solid #ef5a24; outline-offset: 2px; }
+
+    /* About dialog */
+    .about { width: min(600px, calc(100% - 32px)); max-height: calc(100% - 32px); padding: 0; border: 0; border-radius: 14px; color: #1f2937;
+      box-shadow: 0 24px 60px -12px rgba(0,0,0,.35); }
+    .about::backdrop { background: rgba(17,24,39,.45); }
+    .about[open] { display: flex; flex-direction: column; }
+    .about-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid #e5e7eb; }
+    .about-head h2 { margin: 0; font-size: 19px; }
+    .about-body { padding: 4px 20px 16px; overflow-y: auto; }
+    .about h3 { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 8px; font-size: 15px; }
+    .about p { font-size: 13px; line-height: 1.55; margin: 0 0 10px; }
+    .about a { color: #c2410c; text-decoration: none; }
+    .about a:hover { text-decoration: underline; }
+    .about table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .about td { padding: 7px 10px; vertical-align: middle; overflow-wrap: anywhere; }
+    .about tr:nth-child(odd) td { background: #f3f4f6; }
+    .about td:first-child { width: 30%; color: #4b5563; font-weight: 500; }
+    .about td:last-child { width: 34px; padding: 0 6px; text-align: right; }
+    .badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    .badge.ok { background: #dcfce7; color: #15803d; }
+    .badge.new { background: #ffedd5; color: #c2410c; }
+    .badge.dev { background: #e5e7eb; color: #4b5563; }
+    .icon-btn { display: inline-grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: none; color: #4b5563; cursor: pointer; }
+    .icon-btn:hover { background: #e5e7eb; color: #111827; }
+    .icon-btn:focus-visible, .about-foot button:focus-visible { outline: 2px solid #ef5a24; outline-offset: 1px; }
+    .icon-btn svg { width: 16px; height: 16px; }
+    .about-foot { display: flex; justify-content: space-between; gap: 8px; padding: 14px 20px; border-top: 1px solid #e5e7eb; }
+    .about-foot button { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 14px; font-weight: 500; padding: 7px 14px; border-radius: 7px; cursor: pointer; }
+    .about-foot .secondary { border: 1px solid #ea580c; background: #fff; color: #c2410c; }
+    .about-foot .secondary:hover { background: #fff7ed; }
+    .about-foot .primary { border: 1px solid #ea580c; background: #ea580c; color: #fff; }
+    .about-foot .primary:hover { background: #c2410c; }
+    .about-foot svg { width: 16px; height: 16px; }
     pre { overflow-x: auto; padding: 14px 16px; border-radius: 10px; background: #111827; color: #e5e7eb; font-size: 13px; line-height: 1.5; }
   </style>
 </head>
@@ -31,7 +68,10 @@
 <main>
   <header>
     <h1>STEP Viewer</h1>
-    <a class="release" href="https://github.com/afkiwers/model-3D-viewer/releases/latest">View latest release <span id="release-tag"></span></a>
+    <div class="header-actions">
+      <button type="button" class="about-btn" id="about-open">About</button>
+      <a class="release" href="https://github.com/afkiwers/model-3D-viewer/releases/latest">View latest release <span id="release-tag"></span></a>
+    </div>
   </header>
   <p>Drag to rotate, right-drag to pan, scroll to zoom, double-click to set the rotation centre. Click a numbered marker to read about that part.</p>
 
@@ -61,15 +101,161 @@
        data-download="false"></div>
 </main>
 
+<dialog class="about" id="about" aria-labelledby="about-title">
+  <div class="about-head">
+    <h2 id="about-title">About STEP Viewer</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="about-body">
+    <h3>Version information <span class="badge dev" id="about-status">Checking</span></h3>
+    <table><tbody id="about-version"></tbody></table>
+
+    <h3>Links</h3>
+    <table><tbody id="about-links"></tbody></table>
+
+    <h3>Privacy</h3>
+    <p>Visits to this page are counted with <a href="https://plausible.io/privacy-focused-web-analytics">Plausible Analytics</a>,
+      which uses no cookies and collects no personal data. The models are shown entirely in your browser; nothing you do
+      in the viewers is sent anywhere. The page asks GitHub for the number of the latest release.</p>
+    <p>Free software: you can redistribute and modify it under the GNU General Public License, version 3 or any later
+      version. It comes with absolutely no warranty.</p>
+  </div>
+  <div class="about-foot">
+    <button type="button" class="secondary" id="about-copy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>
+      <span>Copy version information</span>
+    </button>
+    <button type="button" class="primary" data-close>Close</button>
+  </div>
+</dialog>
+
 <script src="step-viewer.js"></script>
 <script>
-  // Show the newest release's version on the button; the link works without it.
-  fetch('https://api.github.com/repos/afkiwers/model-3D-viewer/releases/latest')
-    .then((res) => (res.ok ? res.json() : null))
-    .then((release) => {
+  (function () {
+    const repo = 'https://github.com/afkiwers/model-3D-viewer';
+    const dialog = document.getElementById('about');
+    const copyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>';
+
+    // version.json is written by the GitHub Pages workflow. Without it (running locally) we show "development".
+    const versionInfo = fetch('version.json', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null);
+    const latestRelease = fetch('https://api.github.com/repos/afkiwers/model-3D-viewer/releases/latest')
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null);
+
+    // Show the newest release's version on the button; the link works without it.
+    latestRelease.then((release) => {
       if (release && release.tag_name) document.getElementById('release-tag').textContent = release.tag_name;
-    })
-    .catch(() => {});
+    });
+
+    // Library versions come from the URLs step-viewer.js loads them from.
+    const libVersion = (url, name) => {
+      const match = new RegExp(name + '@([\\w.-]+)').exec(url || '');
+      return match ? match[1] : 'self-hosted';
+    };
+    const threeVersion = libVersion(StepViewer.config.threeUrl, 'three');
+    const day = (iso) => (iso ? iso.slice(0, 10) : '');
+    const stamp = (iso) => (iso ? iso.slice(0, 10) + ' ' + iso.slice(11, 16) + ' UTC' : '');
+
+    function copy(text, button) {
+      const done = () => {
+        const label = button.querySelector('span');
+        if (label) {
+          const before = label.textContent;
+          label.textContent = 'Copied';
+          setTimeout(() => { label.textContent = before; }, 1500);
+        } else {
+          button.style.color = '#15803d';
+          setTimeout(() => { button.style.color = ''; }, 1200);
+        }
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => {});
+    }
+
+    // Copies the shown value, or the full link when `copyHref` is set.
+    function row(tbody, label, value, href, copyHref) {
+      const tr = document.createElement('tr');
+      const name = document.createElement('td');
+      name.textContent = label;
+      const cell = document.createElement('td');
+      if (href) {
+        const a = document.createElement('a');
+        a.href = href;
+        a.textContent = value;
+        cell.appendChild(a);
+      } else {
+        cell.textContent = value;
+      }
+      const action = document.createElement('td');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'icon-btn';
+      button.innerHTML = copyIcon;
+      button.setAttribute('aria-label', 'Copy ' + label.toLowerCase());
+      button.title = 'Copy';
+      button.addEventListener('click', () => copy(copyHref ? href : value, button));
+      action.appendChild(button);
+      tr.append(name, cell, action);
+      tbody.appendChild(tr);
+    }
+
+    let summary = '';
+
+    Promise.all([versionInfo, latestRelease]).then(([info, release]) => {
+      const tbody = document.getElementById('about-version');
+      const version = info ? info.version : 'development';
+      const commit = info ? info.commit.slice(0, 7) : 'local';
+      const rows = [
+        ['Version', version, info && release && release.tag_name === info.version ? release.html_url : null],
+        ['Commit', commit, info ? repo + '/commit/' + info.commit : null],
+        ['Commit date', info ? day(info.commitDate) : '-'],
+        ['Build date', info ? stamp(info.buildDate) : '-'],
+        ['Running from', location.host || 'local file'],
+        ['three.js', /^\d+\.(\d+)\./.test(threeVersion) ? 'r' + threeVersion.split('.')[1] : threeVersion],
+        ['occt-import-js', libVersion(StepViewer.config.occtUrl, 'occt-import-js')],
+        ['License', 'GPL-3.0-or-later', repo + '/blob/main/LICENSE'],
+      ];
+      rows.forEach((r) => row(tbody, r[0], r[1], r[2]));
+      summary = rows.map((r) => r[0] + ': ' + r[1]).join('\n');
+
+      const status = document.getElementById('about-status');
+      if (!info) {
+        status.textContent = 'Development';
+        status.className = 'badge dev';
+      } else if (!release) {
+        status.textContent = 'Unknown';
+        status.className = 'badge dev';
+      } else if (release.tag_name === info.version) {
+        status.textContent = 'Up to date';
+        status.className = 'badge ok';
+      } else if (info.version.indexOf(release.tag_name + '-') === 0) {
+        status.textContent = 'Unreleased build'; // built by hand from commits after the latest release
+        status.className = 'badge dev';
+      } else {
+        status.textContent = release.tag_name + ' available';
+        status.className = 'badge new';
+      }
+    });
+
+    const links = document.getElementById('about-links');
+    const short = (url) => url.replace(/^https:\/\//, '');
+    const site = 'https://afkiwers.github.io/model-3D-viewer/';
+    [
+      ['Online demo', site],
+      ['Source code', repo],
+      ['Releases and downloads', repo + '/releases'],
+      ['Report a problem', repo + '/issues/new'],
+    ].forEach((l) => row(links, l[0], short(l[1]), l[1], true));
+
+    document.getElementById('about-open').addEventListener('click', () => dialog.showModal());
+    dialog.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => dialog.close()));
+    // Clicking the dimmed backdrop closes the dialog.
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+    document.getElementById('about-copy').addEventListener('click', (e) => copy(summary, e.currentTarget));
+  })();
 </script>
 </body>
 </html>

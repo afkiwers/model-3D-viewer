@@ -24,10 +24,23 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # tags, so a manual run can name its version
       - name: Collect site files
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           mkdir _site
           cp -r index.html step-viewer.js models _site/
+          # Version details for the demo page's About dialog (not used by step-viewer.js).
+          version="${RELEASE_TAG:-$(git describe --tags --always)}"
+          jq -n \
+            --arg version "$version" \
+            --arg commit "$GITHUB_SHA" \
+            --arg commitDate "$(git log -1 --format=%cI)" \
+            --arg buildDate "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{version: $version, commit: $commit, commitDate: $commitDate, buildDate: $buildDate}' > _site/version.json
+          cat _site/version.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
