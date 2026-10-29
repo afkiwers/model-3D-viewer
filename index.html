@@ -96,7 +96,7 @@
   <h2>The HTML for the viewer above</h2>
 <pre>&lt;div class="step-viewer"
      data-src="models/Connector.stp"
-     data-markers="models/Connector.markers.json"
+     data-markers="models/Connector.markers.json"<span id="snippet-theme"></span>
      data-height="560"&gt;&lt;/div&gt;
 
 &lt;script src="step-viewer.js"&gt;&lt;/script&gt;</pre>
@@ -146,16 +146,35 @@
 
 <script src="step-viewer.js"></script>
 <script>
-  // Marker style buttons: switch the first viewer's theme and open a marker to show it off.
-  document.querySelectorAll('[data-theme-choice]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const viewer = StepViewer.get(document.getElementById('main-viewer'));
-      if (!viewer) return;
-      document.querySelectorAll('[data-theme-choice]').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
-      viewer.setTheme(button.dataset.themeChoice);
-      viewer.ready.then(() => { if (viewer.activeMarker == null) viewer.openMarker(0); });
-    });
-  });
+  // Marker style switcher: applies to every viewer on the page, updates the HTML example,
+  // and keeps the choice in the address (?theme=military) so it survives a reload or can be shared.
+  (function () {
+    const buttons = document.querySelectorAll('[data-theme-choice]');
+    const themes = Array.from(buttons, (b) => b.dataset.themeChoice);
+
+    function applyTheme(theme, showCard) {
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeChoice === theme)));
+      document.querySelectorAll('.step-viewer').forEach((el) => {
+        const viewer = StepViewer.get(el);
+        // Viewers are created when the page finishes loading; before that, the attribute sets the theme.
+        if (viewer) viewer.setTheme(theme);
+        else el.dataset.theme = theme;
+      });
+      document.getElementById('snippet-theme').textContent = theme === 'default' ? '' : '\n     data-theme="' + theme + '"';
+      const url = new URL(location.href);
+      if (theme === 'default') url.searchParams.delete('theme');
+      else url.searchParams.set('theme', theme);
+      history.replaceState(null, '', url);
+      if (showCard) {
+        const main = StepViewer.get(document.getElementById('main-viewer'));
+        if (main) main.ready.then(() => { if (main.activeMarker == null) main.openMarker(0); });
+      }
+    }
+
+    buttons.forEach((b) => b.addEventListener('click', () => applyTheme(b.dataset.themeChoice, true)));
+    const fromUrl = new URLSearchParams(location.search).get('theme');
+    if (themes.indexOf(fromUrl) > 0) applyTheme(fromUrl, false);
+  })();
 </script>
 <script>
   (function () {
