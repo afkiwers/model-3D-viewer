@@ -1,9 +1,10 @@
-# Publishes the demo (index.html, step-viewer.js and models/) to GitHub Pages on every push to main.
+# Publishes the demo (index.html, step-viewer.js and models/) to GitHub Pages
+# whenever a release is published. It can also be run by hand from the Actions tab.
 name: Deploy GitHub Pages
 
 on:
-  push:
-    branches: [main]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:

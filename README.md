@@ -33,7 +33,8 @@ The file must be served from your own site (or from a server that allows cross-o
 **Live demo: https://afkiwers.github.io/model-3d-viewer/**
 
 `index.html` shows two viewers using `models/Connector.stp`. It is published to GitHub Pages by
-`.github/workflows/pages.yml` on every push to `main`. To run it locally instead (browsers won't
+`.github/workflows/pages.yml` each time a release is published (or when the workflow is run by hand
+from the Actions tab), so the live demo always shows the latest release. To run it locally instead (browsers won't
 load files from `file://`), serve the folder:
 
 ```sh
