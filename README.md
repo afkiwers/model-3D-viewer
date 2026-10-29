@@ -51,7 +51,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 
 | Option | Default | What it does |
 | --- | --- | --- |
-| `src` | *(required)* | URL of the STEP file. |
+| `src` | *(required)* | URL of the STEP file. In JavaScript it can also be a `File` (from a file picker or drag and drop), which is read locally. |
 | `width` | `100%` | Viewer width. Any CSS length; plain numbers are pixels. |
 | `height` | `480px` | Viewer height. Any CSS length; plain numbers are pixels. |
 | `zoom` | `1` | Starting zoom. `1` fits the model to the view, `2` is twice as close, `0.5` twice as far. |
@@ -141,7 +141,14 @@ You can also write the JSON inline, inside the viewer element:
 
 ### Placing markers with the editor
 
-Nobody wants to guess coordinates, so there is an editor:
+Nobody wants to guess coordinates, so there is an editor.
+
+**The easy way:** open the [live demo](https://afkiwers.github.io/model-3D-viewer/#your-model), press
+**Load local file** and pick your model. Place and describe your markers, choose a marker style and a starting
+view, then copy the ready-made HTML and download the markers file. Your model is opened by your browser only:
+it is never uploaded and never leaves your computer.
+
+**On your own site:**
 
 1. Add `data-editor="true"` to the viewer (on a private page, or temporarily).
 2. Click the **Add marker** button (the pin with a plus), then click the model where the marker goes.
@@ -163,6 +170,7 @@ await viewer.ready;              // resolves when the model is shown, rejects if
 
 viewer.setView('front');         // or a direction: [1, -1, 0.5]
 viewer.resetView();
+viewer.getView();                // current camera as { view: [x, y, z], zoom } for data-view / data-zoom
 viewer.setMeasureMode(true);
 viewer.getMeasurements();        // [{ distance, delta: [dx, dy, dz], a, b, units }]
 viewer.clearMeasurements();
@@ -197,6 +205,7 @@ el.addEventListener('stepviewer:load', (e) => console.log('size', e.detail.size)
 el.addEventListener('stepviewer:error', (e) => console.error(e.detail.error));
 el.addEventListener('stepviewer:measure', (e) => console.log(e.detail.distance));
 el.addEventListener('stepviewer:marker', (e) => console.log(e.detail.index, e.detail.marker.title));
+el.addEventListener('stepviewer:markerschange', (e) => save(e.detail.markers)); // added, edited or removed
 ```
 
 To stop the automatic set-up, add `data-auto-init="false"` to the script tag and call

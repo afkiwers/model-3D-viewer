@@ -197,6 +197,7 @@
 .sv-card-text :where(p,li,ul,ol,span,strong,em,b,i,small){color:inherit;font-size:inherit;line-height:inherit}
 .sv-card h3{font-family:inherit}
 .sv-card-text:empty{display:none}
+.sv-card-text[contenteditable]:empty{display:block}
 .sv-card-text p{margin:0 0 .6em;color:inherit}.sv-card-text p:last-child{margin:0}
 .sv-card-text a{color:#ffb38f}
 .sv-card-text img,.sv-card-img{display:block;max-width:100%;border-radius:10px}
@@ -660,6 +661,7 @@
   const cssSize = (v) => (typeof v === 'number' || /^\d+(\.\d+)?$/.test(v) ? v + 'px' : v);
 
   function fileName(url) {
+    if (typeof Blob !== 'undefined' && url instanceof Blob) return url.name || 'model.step';
     try {
       const path = new URL(url, document.baseURI).pathname;
       return decodeURIComponent(path.split('/').pop()) || 'model.step';
@@ -975,6 +977,18 @@
     }
 
     /** Back to the view and zoom from the options. */
+    /**
+     * The current camera as options for a page: { view: [x, y, z], zoom }.
+     * Use them as data-view / data-zoom to start other viewers looking the same way.
+     */
+    getView() {
+      if (!this.controls) return null;
+      const dir = this.camera.position.clone().sub(this.controls.target).normalize();
+      const fit = this._fitPose(dir, 1);
+      const zoom = fit.position.distanceTo(fit.target) / this.camera.position.distanceTo(this.controls.target);
+      return { view: dir.toArray().map((v) => Math.round(v * 1000) / 1000), zoom: Math.round(zoom * 100) / 100 };
+    }
+
     resetView(animate) {
       if (!this.controls) return;
       const pose = this._fitPose(this._viewDir(this.o.view), this.o.zoom);
@@ -1083,7 +1097,7 @@
       this._occlusionAt = 0;
       if (this.btn.markers) this.btn.markers.hidden = !this.markers.length;
       this._syncNav();
-      this._syncEditor();
+      this._markersChanged();
       this.requestRender();
     }
 
@@ -1102,11 +1116,12 @@
       if (!this.o.download) return;
       const url = this.o.downloadUrl || this.o.src;
       const a = document.createElement('a');
-      a.href = url;
+      a.href = url instanceof Blob ? URL.createObjectURL(url) : url;
       a.download = this.o.downloadName || fileName(url);
       document.body.appendChild(a);
       a.click();
       a.remove();
+      if (url instanceof Blob) setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     }
 
     /**
@@ -1172,7 +1187,7 @@
       if (this.renderer) this.renderer.dispose();
       this._ui.forEach((node) => node.remove());
       if (this.canvas) this.canvas.remove();
-      this.el.classList.remove('sv-root', 'sv-measuring', 'sv-expanded');
+      this.el.classList.remove('sv-root', 'sv-measuring', 'sv-expanded', 'sv-markers-off', 'sv-theme-' + this.o.theme);
       instances.delete(this.el);
     }
 
@@ -1185,6 +1200,7 @@
         const threeReady = loadThree();
         const engineReady = getEngine();
         const buffer = await this._fetchModel();
+        if (this._disposed) return;
         this._status('Preparing geometry engine…');
         const engine = await engineReady;
         this._status('Processing geometry…');
@@ -1198,7 +1214,9 @@
         this._status(null);
         this.resetView(false);
         this._afterLoad();
-        this.setMarkers(await this._loadMarkers());
+        const markers = await this._loadMarkers();
+        if (this._disposed) return;
+        this.setMarkers(markers);
         this.el.dispatchEvent(new CustomEvent('stepviewer:load', { detail: { viewer: this, size: this.size } }));
         this._resolveReady(this);
       } catch (err) {
@@ -1211,6 +1229,7 @@
 
     async _loadMarkers() {
       let list = this.o.markers;
+      if (this._disposed) return [];
       if (list == null) {
         const inline = this.el.querySelector('script[type="application/json"]');
         if (!inline) return [];
@@ -1235,6 +1254,11 @@
     }
 
     async _fetchModel() {
+      // A File from a file picker or drag and drop is read locally; nothing is uploaded.
+      if (this.o.src instanceof Blob) {
+        this._status('Reading file…');
+        return this.o.src.arrayBuffer();
+      }
       const name = fileName(this.o.src);
       let res;
       try {
@@ -1761,6 +1785,11 @@
       };
     }
 
+    _markersChanged() {
+      this._syncEditor();
+      this.el.dispatchEvent(new CustomEvent('stepviewer:markerschange', { detail: { markers: this.getMarkers() } }));
+    }
+
     _syncEditor() {
       if (!this.o.editor) return;
       this.editor.hidden = !this.addMode && this.activeMarker == null;
@@ -1829,11 +1858,11 @@
           d.title = title.textContent;
           mk.el.setAttribute('aria-label', 'Marker ' + (index + 1) + ': ' + d.title);
           this._syncNav();
-          this._syncEditor();
+          this._markersChanged();
         });
         text.addEventListener('input', () => {
           d.description = text.innerHTML;
-          this._syncEditor();
+          this._markersChanged();
         });
         const foot = el('div', 'sv-card-foot sv-reveal');
         foot.style.setProperty('--d', 2);
@@ -1841,7 +1870,7 @@
         saveView.type = 'button';
         saveView.addEventListener('click', () => {
           d.camera = this._currentCamera();
-          this._syncEditor();
+          this._markersChanged();
           saveView.textContent = 'View saved';
         });
         const remove = el('button', null, 'Delete');

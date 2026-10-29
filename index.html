@@ -66,6 +66,31 @@
     .themes button:hover { border-color: #ef5a24; }
     .themes button[aria-pressed="true"] { background: #1f2937; border-color: #1f2937; color: #fff; }
     .themes button:focus-visible { outline: 2px solid #ef5a24; outline-offset: 2px; }
+    /* Try your own model */
+    .local-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0 0 12px; }
+    .load-btn { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 15px; font-weight: 600; padding: 9px 16px; border: 0; border-radius: 9px;
+      background: #ef5a24; color: #fff; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 4px 12px -4px rgba(239,90,36,.6); }
+    .load-btn:hover { background: #d9481a; }
+    .load-btn:focus-visible { outline: 2px solid #1f2937; outline-offset: 2px; }
+    .load-btn svg { width: 18px; height: 18px; }
+    .privacy-note { display: flex; align-items: flex-start; gap: 8px; flex: 1 1 280px; margin: 0; padding: 8px 12px; border-radius: 9px;
+      background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: 13.5px; line-height: 1.45; }
+    .privacy-note svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+    .load-error { color: #b91c1c; font-size: 14px; margin: -4px 0 12px; }
+    .load-error:empty { display: none; }
+    #work-viewer.drag-over::after { content: "Drop to open"; position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; border-radius: inherit;
+      border: 3px dashed #ef5a24; background: rgba(255,247,237,.85); color: #c2410c; font-size: 20px; font-weight: 600; pointer-events: none; }
+    .config { margin-top: 16px; padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e5e7eb; }
+    .config-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .config h3 { margin: 0; font-size: 16px; }
+    .config h3 + p, .config-head + p { margin: 6px 0 10px; font-size: 14px; }
+    .config h3 code { font-size: 13px; font-weight: 500; color: #6b7280; }
+    .config pre { margin: 0 0 8px; max-height: 320px; }
+    .config-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .config-actions:last-child { margin-bottom: 0; }
+    .config button { font: inherit; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 7px; border: 1px solid #d1d5db; background: #fff; color: #1f2937; cursor: pointer; }
+    .config button:hover { border-color: #ef5a24; color: #c2410c; }
+    .config button:focus-visible { outline: 2px solid #ef5a24; outline-offset: 2px; }
     pre { overflow-x: auto; padding: 14px 16px; border-radius: 10px; background: #111827; color: #e5e7eb; font-size: 13px; line-height: 1.5; }
   </style>
 </head>
@@ -101,17 +126,52 @@
 
 &lt;script src="step-viewer.js"&gt;&lt;/script&gt;</pre>
 
-  <h2>Marker editor</h2>
-  <p>With <code>data-editor="true"</code> the toolbar gets an "Add marker" button. Click the model to place a marker, type its title and text straight into the card, then copy the JSON into your markers file.</p>
+  <h2 id="your-model">Try your own model</h2>
+  <p>Open a STEP, IGES or BREP file from your computer to see how it looks, place markers on it and get the code for
+    your own site. Click the pin with a plus in the toolbar, then click the model where a marker should go, and type its
+    title and text straight into the card.</p>
 
-  <div class="step-viewer"
+  <div class="local-bar">
+    <button type="button" class="load-btn" id="load-file">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18V9.5A1.5 1.5 0 0 0 18.5 8H12l-2-2.5H5.5A1.5 1.5 0 0 0 4 7z"/><path d="M12 11v5M9.5 13.5 12 11l2.5 2.5"/></svg>
+      Load local file
+    </button>
+    <input type="file" id="file-input" accept=".step,.stp,.iges,.igs,.brep,.brp" hidden>
+    <p class="privacy-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      <span><strong>Your file stays on your computer.</strong> It is opened by your browser only; nothing is uploaded and no
+        part of it leaves your device. You can also drop a file onto the viewer.</span>
+    </p>
+  </div>
+  <p class="load-error" id="load-error" role="alert"></p>
+
+  <div class="step-viewer" id="work-viewer"
        data-src="models/Connector.stp"
        data-markers="models/Connector.markers.json"
        data-editor="true"
-       data-view="front"
-       data-zoom="0.9"
-       data-height="460"
+       data-height="500"
        data-download="false"></div>
+
+  <section class="config" aria-labelledby="config-title">
+    <div class="config-head">
+      <h3 id="config-title">Code for your site</h3>
+      <button type="button" id="use-view">Use current view as starting view</button>
+    </div>
+    <p>Put <code id="config-model-name">Connector.stp</code> and the markers file in a <code>models</code> folder on your
+      server, and paste this where the viewer should appear. It follows the marker style chosen at the top of the page.</p>
+    <pre id="config-html"></pre>
+    <div class="config-actions">
+      <button type="button" data-copy="config-html">Copy HTML</button>
+    </div>
+
+    <h3>Markers file <code id="config-markers-name"></code></h3>
+    <p>Updates as you add and edit markers.</p>
+    <pre id="config-markers"></pre>
+    <div class="config-actions">
+      <button type="button" data-copy="config-markers">Copy JSON</button>
+      <button type="button" id="download-markers">Download markers file</button>
+    </div>
+  </section>
 </main>
 
 <dialog class="about" id="about" aria-labelledby="about-title">
@@ -131,7 +191,7 @@
     <h3>Privacy</h3>
     <p>Visits to this page are counted with <a href="https://plausible.io/privacy-focused-web-analytics">Plausible Analytics</a>,
       which uses no cookies and collects no personal data. The models are shown entirely in your browser; nothing you do
-      in the viewers is sent anywhere. The page asks GitHub for the number of the latest release.</p>
+      in the viewers is sent anywhere, and files you open with "Load local file" are never uploaded. The page asks GitHub for the number of the latest release.</p>
     <p>Free software: you can redistribute and modify it under the GNU General Public License, version 3 or any later
       version. It comes with absolutely no warranty.</p>
   </div>
@@ -174,6 +234,112 @@
     buttons.forEach((b) => b.addEventListener('click', () => applyTheme(b.dataset.themeChoice, true)));
     const fromUrl = new URLSearchParams(location.search).get('theme');
     if (themes.indexOf(fromUrl) > 0) applyTheme(fromUrl, false);
+  })();
+</script>
+<script>
+  // "Try your own model": open a local file in the editor viewer and build the code for a real site.
+  // The file is handed to the viewer as a File object and read by the browser; it is never uploaded.
+  (function () {
+    const work = document.getElementById('work-viewer');
+    const input = document.getElementById('file-input');
+    const errorBox = document.getElementById('load-error');
+    const state = { modelName: 'Connector.stp', view: null };
+
+    const baseName = () => state.modelName.replace(/\.[^.]+$/, '');
+    const markersName = () => baseName() + '.markers.json';
+    const currentTheme = () => (document.querySelector('[data-theme-choice][aria-pressed="true"]') || {}).dataset?.themeChoice || 'default';
+    const attr = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+    function render() {
+      const viewer = StepViewer.get(work);
+      const markers = viewer ? viewer.getMarkers() : [];
+      const lines = ['<div class="step-viewer"', '     data-src="models/' + attr(state.modelName) + '"'];
+      if (markers.length) lines.push('     data-markers="models/' + attr(markersName()) + '"');
+      if (currentTheme() !== 'default') lines.push('     data-theme="' + currentTheme() + '"');
+      if (state.view) lines.push('     data-view="' + state.view.view.join(',') + '"', '     data-zoom="' + state.view.zoom + '"');
+      lines.push('     data-height="500"></div>', '', '<script src="step-viewer.js"></' + 'script>');
+      document.getElementById('config-html').textContent = lines.join('\n');
+      document.getElementById('config-markers').textContent = markers.length
+        ? JSON.stringify(markers, null, 2)
+        : '[]\n\n// No markers yet: click the pin with a plus in the viewer toolbar, then click the model.';
+      document.getElementById('config-model-name').textContent = state.modelName;
+      document.getElementById('config-markers-name').textContent = markersName();
+    }
+
+    function open(file) {
+      errorBox.textContent = '';
+      if (!/\.(step|stp|iges|igs|brep|brp)$/i.test(file.name)) {
+        errorBox.textContent = file.name + ' is not a STEP, IGES or BREP file.';
+        return;
+      }
+      const old = StepViewer.get(work);
+      if (old) old.dispose();
+      state.modelName = file.name;
+      state.view = null;
+      const viewer = StepViewer.create(work, { src: file, markers: [], editor: true, view: 'iso', zoom: 1, lazy: false, theme: currentTheme() });
+      viewer.ready.then(render, () => {});
+      render();
+      work.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    document.getElementById('load-file').addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      if (input.files[0]) open(input.files[0]);
+      input.value = ''; // allow opening the same file again
+    });
+
+    // Drag and drop onto the viewer.
+    let dragDepth = 0;
+    work.addEventListener('dragenter', (e) => { e.preventDefault(); dragDepth++; work.classList.add('drag-over'); });
+    work.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    work.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; work.classList.remove('drag-over'); } });
+    work.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragDepth = 0;
+      work.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) open(e.dataTransfer.files[0]);
+    });
+
+    work.addEventListener('stepviewer:markerschange', render);
+    document.querySelectorAll('[data-theme-choice]').forEach((b) => b.addEventListener('click', () => setTimeout(render)));
+
+    const useView = document.getElementById('use-view');
+    useView.addEventListener('click', () => {
+      const viewer = StepViewer.get(work);
+      const view = viewer && viewer.getView();
+      if (!view) return;
+      state.view = view;
+      render();
+      useView.textContent = 'Starting view saved';
+      setTimeout(() => { useView.textContent = 'Use current view as starting view'; }, 1500);
+    });
+
+    document.querySelectorAll('[data-copy]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const text = document.getElementById(button.dataset.copy).textContent;
+        if (!navigator.clipboard) return;
+        navigator.clipboard.writeText(text).then(() => {
+          const before = button.textContent;
+          button.textContent = 'Copied';
+          setTimeout(() => { button.textContent = before; }, 1500);
+        }, () => {});
+      });
+    });
+
+    // Saved straight from the page; this does not go through any server either.
+    document.getElementById('download-markers').addEventListener('click', () => {
+      const viewer = StepViewer.get(work);
+      const blob = new Blob([JSON.stringify(viewer ? viewer.getMarkers() : [], null, 2) + '\n'], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = markersName();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    });
+
+    render();
   })();
 </script>
 <script>
