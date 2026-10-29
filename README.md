@@ -58,7 +58,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `up` | `z` | Which model axis points up: `z` (most CAD programs) or `y` (SolidWorks and some others). |
 | `units` | `mm` | Units for sizes and measurements: `mm`, `cm`, `m`, `in` or `ft`. The model is converted. |
 | `precision` | `2` | Decimal places in measurements. |
-| `download` | `true` | Show the download button. |
+| `download` | `true` | Show the download button. `false` hides it and blocks `viewer.download()`. Can be changed later with `viewer.setDownload()`. |
 | `downloadUrl` | same as `src` | File to download, if it should be different from the one shown. |
 | `downloadName` | name in the URL | File name for the download. |
 | `measure` | `true` | Show the ruler button. |
@@ -168,12 +168,22 @@ viewer.nextMarker(1);            // or -1 for the previous one
 viewer.closeMarker();
 viewer.setMarkers([...]);
 viewer.getMarkers();             // current markers as plain data
-viewer.download();
+viewer.download();               // does nothing while downloads are disabled
+viewer.setDownload(false);       // hide the download button
+viewer.setDownload(true, { url: '/files/part-full.step', name: 'part.step' });
 viewer.toggleFullscreen();
 viewer.dispose();                // remove the viewer and free the GPU memory
 
 StepViewer.init(container);      // set up viewers added to the page later
 StepViewer.get(element);         // the viewer inside an element
+```
+
+To change a default for every viewer on the site, for example to turn downloads off everywhere,
+set it before loading the script. A `data-*` attribute on a single viewer still wins:
+
+```html
+<script>window.StepViewerConfig = { defaults: { download: false } };</script>
+<script src="/js/step-viewer.js"></script>
 ```
 
 Events are dispatched on the viewer element:

@@ -68,6 +68,8 @@
     markers: null,         // hotspots: URL of a JSON file, or an array (see README)
     editor: false,         // marker editor: click the model to place markers and copy their JSON
   };
+  // Site-wide defaults, e.g. window.StepViewerConfig = { defaults: { download: false } }
+  if (config.defaults) Object.assign(DEFAULTS, config.defaults);
 
   const UNITS = { mm: 'millimeter', cm: 'centimeter', m: 'meter', in: 'inch', ft: 'foot' };
 
@@ -190,9 +192,11 @@
 .sv-card-num{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;
   background:radial-gradient(circle at 30% 30%,#ffb38f,var(--sv-accent) 60%);box-shadow:0 0 0 4px rgba(239,90,36,.22),0 0 18px rgba(239,90,36,.6)}
 .sv-card h3{margin:0;font-size:16.5px;line-height:1.25;font-weight:700;letter-spacing:-.01em;color:#fff;outline:none}
-.sv-card-text{margin-top:11px;color:#cbd5e1;font-size:13.5px;line-height:1.6;outline:none}
+.sv-card-text{margin-top:11px;color:#e2e8f0;font-size:13.5px;line-height:1.6;outline:none}
+.sv-card-text :where(p,li,ul,ol,span,strong,em,b,i,small){color:inherit;font-size:inherit;line-height:inherit}
+.sv-card h3{font-family:inherit}
 .sv-card-text:empty{display:none}
-.sv-card-text p{margin:0 0 .6em}.sv-card-text p:last-child{margin:0}
+.sv-card-text p{margin:0 0 .6em;color:inherit}.sv-card-text p:last-child{margin:0}
 .sv-card-text a{color:#ffb38f}
 .sv-card-text img,.sv-card-img{display:block;max-width:100%;border-radius:10px}
 .sv-card-img{width:calc(100% + 36px);max-width:none;margin:-16px -18px 14px;border-radius:0;height:150px;object-fit:cover}
@@ -974,7 +978,9 @@
       });
     }
 
+    /** Download the model file. Does nothing while downloads are disabled. */
     download() {
+      if (!this.o.download) return;
       const url = this.o.downloadUrl || this.o.src;
       const a = document.createElement('a');
       a.href = url;
@@ -982,6 +988,20 @@
       document.body.appendChild(a);
       a.click();
       a.remove();
+    }
+
+    /**
+     * Turn the download button on or off. Optionally change what is downloaded:
+     * setDownload(true, { url: '/files/part-full.step', name: 'part.step' })
+     */
+    setDownload(enabled, options) {
+      this.o.download = !!enabled;
+      if (options && 'url' in options) this.o.downloadUrl = options.url || null;
+      if (options && 'name' in options) this.o.downloadName = options.name || null;
+      const b = this.btn.download;
+      b.hidden = !this.o.download;
+      b.title = 'Download ' + (this.o.downloadName || fileName(this.o.downloadUrl || this.o.src));
+      b.setAttribute('aria-label', b.title);
     }
 
     toggleFullscreen() {
@@ -1155,7 +1175,8 @@
         addBtn('markers', 'Show or hide markers', 'pin', () => this._toggleMarkers(), (b) => { b.hidden = true; b.setAttribute('aria-pressed', 'true'); });
       }
       if (o.editor) addBtn('addMarker', 'Add marker', 'addPin', () => this._setAddMode(!this.addMode), (b) => b.setAttribute('aria-pressed', 'false'));
-      if (o.download) addBtn('download', 'Download ' + (o.downloadName || fileName(o.downloadUrl || o.src)), 'download', () => this.download());
+      // Always created so setDownload() can show it later; hidden while downloads are off.
+      addBtn('download', 'Download ' + (o.downloadName || fileName(o.downloadUrl || o.src)), 'download', () => this.download(), (b) => { b.hidden = !o.download; });
       if (o.fullscreen) addBtn('fullscreen', 'Fullscreen', 'expand', () => this.toggleFullscreen());
 
       this.menu = el('div', 'sv-menu');
