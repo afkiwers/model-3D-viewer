@@ -1,0 +1,65 @@
+[
+  {
+    "title": "Snap-in cover",
+    "description": "<p>Clips onto the hand piece without tools. The four windows give direct access to the contacts behind it.</p>",
+    "position": [
+      -0.411,
+      -6.413,
+      9.357
+    ],
+    "camera": {
+      "position": [
+        -31.72,
+        -87.01,
+        53.79
+      ],
+      "target": [
+        -0.411,
+        -6.413,
+        9.357
+      ]
+    }
+  },
+  {
+    "title": "Locking tab",
+    "description": "<p>Holds the cover in place once it is pushed home.</p><p>Press here to release it.</p>",
+    "position": [
+      -0.064,
+      18.709,
+      0.272
+    ],
+    "camera": {
+      "position": [
+        52.23,
+        -28.72,
+        66.58
+      ],
+      "target": [
+        -0.064,
+        18.709,
+        0.272
+      ]
+    }
+  },
+  {
+    "title": "Hand piece",
+    "description": "<p>The curved grip carries the cable away from the connector body and gives your fingers something to pull on.</p>",
+    "position": [
+      28.436,
+      11.587,
+      -0.516
+    ],
+    "camera": {
+      "position": [
+        94.5,
+        -60.31,
+        26.33
+      ],
+      "target": [
+        28.436,
+        11.587,
+        -0.516
+      ]
+    }
+  }
+]

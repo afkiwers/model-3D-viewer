@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>STEP Viewer Demo</title>
+  <style>
+    body { margin: 0; font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #1f2937; background: #fafafa; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
+    h1 { margin: 0 0 4px; font-size: 28px; }
+    h2 { margin: 40px 0 8px; font-size: 20px; }
+    p { margin: 0 0 16px; color: #4b5563; }
+    .step-viewer { border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.06); }
+    pre { overflow-x: auto; padding: 14px 16px; border-radius: 10px; background: #111827; color: #e5e7eb; font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>STEP Viewer</h1>
+  <p>Drag to rotate, right-drag to pan, scroll to zoom, double-click to set the rotation centre. Click a numbered marker to read about that part.</p>
+
+  <div class="step-viewer"
+       data-src="models/Connector.stp"
+       data-markers="models/Connector.markers.json"
+       data-height="560"></div>
+
+  <h2>The HTML for the viewer above</h2>
+<pre>&lt;div class="step-viewer"
+     data-src="models/Connector.stp"
+     data-markers="models/Connector.markers.json"
+     data-height="560"&gt;&lt;/div&gt;
+
+&lt;script src="step-viewer.js"&gt;&lt;/script&gt;</pre>
+
+  <h2>Marker editor</h2>
+  <p>With <code>data-editor="true"</code> the toolbar gets an "Add marker" button. Click the model to place a marker, type its title and text straight into the card, then copy the JSON into your markers file.</p>
+
+  <div class="step-viewer"
+       data-src="models/Connector.stp"
+       data-markers="models/Connector.markers.json"
+       data-editor="true"
+       data-view="front"
+       data-zoom="0.9"
+       data-height="460"
+       data-download="false"></div>
+</main>
+
+<script src="step-viewer.js"></script>
+</body>
+</html>
