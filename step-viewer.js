@@ -10,6 +10,12 @@
  *   <script src="/js/step-viewer.js"></script>
  *
  * See README.md for every option.
+ *
+ * Copyright (C) 2026 afkiwers
+ * This program is free software: you can redistribute it and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version. It is distributed WITHOUT ANY WARRANTY; see the
+ * LICENSE file or <https://www.gnu.org/licenses/gpl-3.0.html> for details.
  */
 (function (global) {
   'use strict';

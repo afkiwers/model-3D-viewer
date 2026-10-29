@@ -241,9 +241,13 @@ Make sure your server sends `.wasm` files as `application/wasm`.
 * Works in current Chrome, Edge, Firefox and Safari, on desktop and mobile. iPhones have no real
   fullscreen for page elements, so the viewer fills the window instead.
 
-## Licences
+## Licence
 
-`step-viewer.js` loads, but does not include, these libraries:
+STEP Viewer is free software, licensed under the
+[GNU General Public License v3.0](LICENSE) (GPL-3.0). You may use, change and share it; if you
+distribute a modified version, it must stay under the GPL-3.0 with its source available.
+
+`step-viewer.js` loads, but does not include, these libraries, which keep their own licences:
 
 * [three.js](https://github.com/mrdoob/three.js): MIT
 * [occt-import-js](https://github.com/kovacsv/occt-import-js) and OpenCascade: LGPL-2.1
