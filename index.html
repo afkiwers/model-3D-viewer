@@ -91,6 +91,12 @@
     .config button { font: inherit; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 7px; border: 1px solid #d1d5db; background: #fff; color: #1f2937; cursor: pointer; }
     .config button:hover { border-color: #ef5a24; color: #c2410c; }
     .config button:focus-visible { outline: 2px solid #ef5a24; outline-offset: 2px; }
+    .config .step { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 6px; border-radius: 50%; background: #1f2937; color: #fff; font-size: 12px; vertical-align: 1px; }
+    .config .status { font-size: 13px; color: #15803d; align-self: center; }
+    .options { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin: 4px 0 22px; font-size: 14px; }
+    .options label { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+    .options select { font: inherit; font-size: 14px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 7px; background: #fff; }
+    .options input[type="checkbox"] { width: 16px; height: 16px; accent-color: #ef5a24; }
     pre { overflow-x: auto; padding: 14px 16px; border-radius: 10px; background: #111827; color: #e5e7eb; font-size: 13px; line-height: 1.5; }
   </style>
 </head>
@@ -149,14 +155,36 @@
        data-src="models/Connector.stp"
        data-markers="models/Connector.markers.json"
        data-editor="true"
+       data-view-cube="open"
        data-height="500"
        data-download="false"></div>
 
   <section class="config" aria-labelledby="config-title">
-    <div class="config-head">
-      <h3 id="config-title">Code for your site</h3>
+    <h3><span class="step">1</span>Orientation</h3>
+    <p>Models often arrive lying on their side or upside down. Turn yours until its front faces you and it stands
+      upright (in the view cube, click the face that should be the front, then use the roll buttons), and press
+      <strong>Make this the front view</strong>. The standard views, the view cube and the code below follow it.</p>
+    <div class="config-actions">
+      <button type="button" id="set-front">Make this the front view</button>
+      <button type="button" id="reset-orientation">Back to the file's orientation</button>
+      <span class="status" id="orientation-status" role="status"></span>
+    </div>
+
+    <h3><span class="step">2</span>Viewer options</h3>
+    <div class="options">
+      <label>View cube
+        <select id="opt-cube">
+          <option value="button">Toolbar button</option>
+          <option value="open">Open from the start</option>
+          <option value="off">Not offered</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="opt-download" checked> Download button</label>
+      <label><input type="checkbox" id="opt-measure" checked> Ruler</label>
       <button type="button" id="use-view">Use current view as starting view</button>
     </div>
+
+    <h3 id="config-title"><span class="step">3</span>Code for your site</h3>
     <p>Put <code id="config-model-name">Connector.stp</code> and the markers file in a <code>models</code> folder on your
       server, and paste this where the viewer should appear. It follows the marker style chosen at the top of the page.</p>
     <pre id="config-html"></pre>
@@ -164,7 +192,7 @@
       <button type="button" data-copy="config-html">Copy HTML</button>
     </div>
 
-    <h3>Markers file <code id="config-markers-name"></code></h3>
+    <h3><span class="step">4</span>Markers file <code id="config-markers-name"></code></h3>
     <p>Updates as you add and edit markers.</p>
     <pre id="config-markers"></pre>
     <div class="config-actions">
@@ -243,7 +271,7 @@
     const work = document.getElementById('work-viewer');
     const input = document.getElementById('file-input');
     const errorBox = document.getElementById('load-error');
-    const state = { modelName: 'Connector.stp', view: null };
+    const state = { modelName: 'Connector.stp', view: null, rotation: [0, 0, 0] };
 
     const baseName = () => state.modelName.replace(/\.[^.]+$/, '');
     const markersName = () => baseName() + '.markers.json';
@@ -256,7 +284,12 @@
       const lines = ['<div class="step-viewer"', '     data-src="models/' + attr(state.modelName) + '"'];
       if (markers.length) lines.push('     data-markers="models/' + attr(markersName()) + '"');
       if (currentTheme() !== 'default') lines.push('     data-theme="' + currentTheme() + '"');
+      if (state.rotation.some((r) => r !== 0)) lines.push('     data-rotation="' + state.rotation.join(',') + '"');
       if (state.view) lines.push('     data-view="' + state.view.view.join(',') + '"', '     data-zoom="' + state.view.zoom + '"');
+      const cube = document.getElementById('opt-cube').value;
+      if (cube !== 'button') lines.push('     data-view-cube="' + cube + '"');
+      if (!document.getElementById('opt-download').checked) lines.push('     data-download="false"');
+      if (!document.getElementById('opt-measure').checked) lines.push('     data-measure="false"');
       lines.push('     data-height="500"></div>', '', '<script src="step-viewer.js"></' + 'script>');
       document.getElementById('config-html').textContent = lines.join('\n');
       document.getElementById('config-markers').textContent = markers.length
@@ -276,7 +309,9 @@
       if (old) old.dispose();
       state.modelName = file.name;
       state.view = null;
-      const viewer = StepViewer.create(work, { src: file, markers: [], editor: true, view: 'iso', zoom: 1, lazy: false, theme: currentTheme() });
+      state.rotation = [0, 0, 0];
+      document.getElementById('orientation-status').textContent = '';
+      const viewer = StepViewer.create(work, { src: file, markers: [], editor: true, view: 'iso', zoom: 1, lazy: false, viewCube: 'open', theme: currentTheme() });
       viewer.ready.then(render, () => {});
       render();
       work.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -302,6 +337,28 @@
 
     work.addEventListener('stepviewer:markerschange', render);
     document.querySelectorAll('[data-theme-choice]').forEach((b) => b.addEventListener('click', () => setTimeout(render)));
+
+    // Orientation: the viewer works out the rotation that makes the current view the front view.
+    const orientationStatus = document.getElementById('orientation-status');
+    document.getElementById('set-front').addEventListener('click', () => {
+      const viewer = StepViewer.get(work);
+      const rotation = viewer && viewer.setFrontFromView();
+      if (!rotation) return;
+      state.rotation = rotation;
+      state.view = null; // a saved starting view no longer matches
+      orientationStatus.textContent = 'Front view set (rotation ' + rotation.join('°, ') + '°)';
+      render();
+    });
+    document.getElementById('reset-orientation').addEventListener('click', () => {
+      const viewer = StepViewer.get(work);
+      if (!viewer) return;
+      viewer.setRotation([0, 0, 0]);
+      state.rotation = [0, 0, 0];
+      state.view = null;
+      orientationStatus.textContent = '';
+      render();
+    });
+    ['opt-cube', 'opt-download', 'opt-measure'].forEach((id) => document.getElementById(id).addEventListener('change', render));
 
     const useView = document.getElementById('use-view');
     useView.addEventListener('click', () => {

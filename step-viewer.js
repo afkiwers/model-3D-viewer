@@ -62,7 +62,7 @@
     downloadName: null,    // file name for the download; defaults to the name in the URL
     measure: true,         // show the ruler button
     orbit: 'free',         // 'free': turn the model any way; 'turntable': keep the up axis upright
-    gizmo: false,          // show the view cube from the start
+    viewCube: 'button',    // view cube: 'button' (opened from the toolbar), 'open' (shown from the start) or 'off'
     views: true,           // show the standard views menu
     fullscreen: true,      // show the fullscreen button
     info: true,            // show the file name and overall size
@@ -680,6 +680,8 @@
     o.zoom = Number(o.zoom) > 0 ? Number(o.zoom) : 1;
     o.up = String(o.up).toLowerCase() === 'y' ? 'y' : 'z';
     o.orbit = o.orbit === 'turntable' ? 'turntable' : 'free';
+    const cube = String(o.viewCube).toLowerCase();
+    o.viewCube = /^(open|true|yes|on)$/.test(cube) ? 'open' : /^(off|false|no|0|none)$/.test(cube) ? 'off' : 'button';
     if (!UNITS[o.units]) o.units = 'mm';
     if (!QUALITY[o.quality]) o.quality = 'normal';
     return o;
@@ -1185,11 +1187,47 @@
       });
     }
 
-    /** Show or hide the view cube in the bottom-left corner. */
-    setGizmo(on) {
+    /** Show or hide the view cube in the bottom-left corner (unless viewCube is 'off'). */
+    setViewCube(on) {
+      if (!this.btn.viewCube) return;
       this.gizmo.hidden = !on;
-      this.btn.gizmo.setAttribute('aria-pressed', String(!!on));
+      this.btn.viewCube.setAttribute('aria-pressed', String(!!on));
       this.requestRender();
+    }
+
+    /** The model's rotation in degrees about X, Y and Z (the rotation option). */
+    getRotation() {
+      return this.o.rotation.slice();
+    }
+
+    /** Turn the model: degrees about X, Y and Z, applied in that order. Markers and measurements turn with it. */
+    setRotation(degrees) {
+      this.o.rotation = [0, 1, 2].map((i) => Number(degrees && degrees[i]) || 0);
+      if (!this.model) return;
+      this.model.rotation.set(this.o.rotation[0] * DEG, this.o.rotation[1] * DEG, this.o.rotation[2] * DEG);
+      this._updateWorld();
+      this.resetView(false);
+    }
+
+    /**
+     * Treat what is on screen now as the model's front view, upright: the model is turned so that the
+     * standard views match. Returns the new rotation, ready for data-rotation.
+     */
+    setFrontFromView() {
+      if (!this.model) return null;
+      const current = new THREE.Matrix4().makeRotationFromQuaternion(this.camera.quaternion);
+      const front = new THREE.Matrix4().lookAt(this._viewDir('front'), new THREE.Vector3(), this.upVec);
+      const turn = new THREE.Quaternion().setFromRotationMatrix(front.multiply(current.invert()));
+      const euler = new THREE.Euler().setFromQuaternion(turn.multiply(this.model.quaternion), 'XYZ');
+      // Views picked with the view cube are whole quarter turns; tidy away rounding noise.
+      const rotation = [euler.x, euler.y, euler.z].map((r) => {
+        const deg = r / DEG;
+        const quarter = Math.round(deg / 90) * 90;
+        const tidy = Math.abs(deg - quarter) < 0.5 ? quarter : Math.round(deg * 100) / 100;
+        return tidy === 0 ? 0 : tidy; // no -0
+      });
+      this.setRotation(rotation);
+      return rotation;
     }
 
     /** Download the model file. Does nothing while downloads are disabled. */
@@ -1402,7 +1440,7 @@
         this.btn[key] = b;
       };
       addBtn('home', 'Reset view', 'home', () => this.resetView());
-      addBtn('gizmo', 'View cube', 'cube', () => this.setGizmo(this.gizmo.hidden), (b) => b.setAttribute('aria-pressed', 'false'));
+      if (o.viewCube !== 'off') addBtn('viewCube', 'View cube', 'cube', () => this.setViewCube(this.gizmo.hidden), (b) => b.setAttribute('aria-pressed', 'false'));
       if (o.views) addBtn('views', 'Standard views', 'views', () => this._toggleMenu(), (b) => b.setAttribute('aria-expanded', 'false'));
       if (o.measure) {
         addBtn('measure', 'Measure distance', 'ruler', () => this.setMeasureMode(!this.measureMode), (b) => b.setAttribute('aria-pressed', 'false'));
@@ -1551,7 +1589,7 @@
     _afterLoad() {
       const o = this.o;
       this.toolbar.hidden = false;
-      if (o.gizmo) this.setGizmo(true);
+      if (o.viewCube === 'open') this.setViewCube(true);
       if (o.info) {
         const s = this.size;
         const f = (v) => trimZeros(v.toFixed(o.precision));
@@ -1708,38 +1746,48 @@
       root.updateMatrixWorld(true);
       this.size = box.getSize(new THREE.Vector3());
 
-      // Model corners in world space, used for snapping.
-      const total = corners.reduce((n, c) => n + c.length, 0);
-      this.cornersWorld = new Float32Array(total);
-      const v = new THREE.Vector3();
+      // Corners (for snapping) and a sample of vertices (for framing), in model coordinates.
+      this.cornersLocal = new Float32Array(corners.reduce((n, c) => n + c.length, 0));
       let k = 0;
       for (const c of corners) {
-        for (let i = 0; i < c.length; i += 3) {
-          v.set(c[i], c[i + 1], c[i + 2]).applyMatrix4(root.matrixWorld);
-          this.cornersWorld[k++] = v.x;
-          this.cornersWorld[k++] = v.y;
-          this.cornersWorld[k++] = v.z;
-        }
+        this.cornersLocal.set(c, k);
+        k += c.length;
       }
-
-      // A sample of vertices (world space) used to frame the model tightly.
       const vertexCount = this.meshes.reduce((n, mesh) => n + mesh.geometry.attributes.position.count, 0);
       const stride = Math.max(1, Math.ceil(vertexCount / 60000));
       const samples = [];
       for (const mesh of this.meshes) {
         const pa = mesh.geometry.attributes.position;
-        for (let i = 0; i < pa.count; i += stride) {
-          v.fromBufferAttribute(pa, i).applyMatrix4(root.matrixWorld);
-          samples.push(v.x, v.y, v.z);
-        }
+        for (let i = 0; i < pa.count; i += stride) samples.push(pa.getX(i), pa.getY(i), pa.getZ(i));
       }
-      this.samples = new Float32Array(samples);
+      this.samplesLocal = new Float32Array(samples);
+      this.localBox = box;
+      this._updateWorld();
+    }
 
-      this.worldBox = box.clone().applyMatrix4(root.matrixWorld);
+    // Recomputes everything that depends on how the model is turned.
+    _updateWorld() {
+      const m = this.model;
+      m.updateMatrixWorld(true);
+      const toWorld = (local) => {
+        const out = new Float32Array(local.length);
+        const v = new THREE.Vector3();
+        for (let i = 0; i < local.length; i += 3) {
+          v.set(local[i], local[i + 1], local[i + 2]).applyMatrix4(m.matrixWorld);
+          out[i] = v.x;
+          out[i + 1] = v.y;
+          out[i + 2] = v.z;
+        }
+        return out;
+      };
+      this.cornersWorld = toWorld(this.cornersLocal);
+      this.samples = toWorld(this.samplesLocal);
+      this.worldBox = this.localBox.clone().applyMatrix4(m.matrixWorld);
       this.center = this.worldBox.getCenter(new THREE.Vector3());
       this.radius = this.worldBox.getSize(new THREE.Vector3()).length() / 2 || 1;
       this.controls.minDistance = this.radius * 0.002;
       this.controls.maxDistance = this.radius * 40;
+      this._occlusionAt = 0;
     }
 
     _viewDir(view) {
@@ -1901,7 +1949,7 @@
         const moved = Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY);
         if (moved < 4 && drag.cell && e.type === 'pointerup') {
           const d = fromZUp(drag.cell.dataset.dir.split(',').map(Number));
-          this.setView(new THREE.Vector3().fromArray(d).applyQuaternion(this.model.quaternion).toArray());
+          this.setView(d);
         }
         drag = null;
       };
@@ -1937,11 +1985,11 @@
       if (this.gizmo.hidden || !this.model) return;
       // Sit just above the bottom bar, however tall it is.
       this.gizmo.style.bottom = this.el.clientHeight - this.bottom.offsetTop + 2 + 'px';
+      // The cube shows the standard views, so it follows the rotation option rather than the file's axes.
       // World to screen: the camera's inverse rotation, with y flipped because CSS y points down.
       const toCamera = this.camera.quaternion.clone().invert();
-      const model = this.model.quaternion;
       const css = (v) => {
-        const c = new THREE.Vector3().fromArray(v).applyQuaternion(model).applyQuaternion(toCamera);
+        const c = new THREE.Vector3().fromArray(v).applyQuaternion(toCamera);
         return [c.x, -c.y, c.z];
       };
       const matrix = (u, w, n, offset) => {

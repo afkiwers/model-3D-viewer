@@ -58,10 +58,10 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `height` | `480px` | Viewer height. Any CSS length; plain numbers are pixels. |
 | `zoom` | `1` | Starting zoom. `1` fits the model to the view, `2` is twice as close, `0.5` twice as far. |
 | `view` | `iso` | Starting view: `iso`, `front`, `back`, `left`, `right`, `top`, `bottom`, or a camera direction such as `"1,-2,1"`. |
-| `rotation` | `0,0,0` | Extra rotation of the model, in degrees about X, Y and Z. |
+| `rotation` | `0,0,0` | Rotation of the model, in degrees about X, Y and Z, for files that arrive lying on their side. The demo's **Make this the front view** button works it out for you. |
 | `up` | `z` | Which model axis points up: `z` (most CAD programs) or `y` (SolidWorks and some others). Sets which way the standard views face. |
 | `orbit` | `free` | How dragging turns the model. `free` turns it in any direction with no limits; `turntable` keeps the up axis upright and stops at the top and bottom. |
-| `gizmo` | `false` | Show the view cube from the start. Visitors can always open it with the cube button in the toolbar. |
+| `viewCube` | `button` | The view cube: `button` (visitors open it from the toolbar), `open` (shown from the start) or `off` (not offered). |
 | `units` | `mm` | Units for sizes and measurements: `mm`, `cm`, `m`, `in` or `ft`. The model is converted. |
 | `precision` | `2` | Decimal places in measurements. |
 | `download` | `true` | Show the download button. `false` hides it and blocks `viewer.download()`. Can be changed later with `viewer.setDownload()`. |
@@ -148,8 +148,9 @@ You can also write the JSON inline, inside the viewer element:
 Nobody wants to guess coordinates, so there is an editor.
 
 **The easy way:** open the [live demo](https://afkiwers.github.io/model-3D-viewer/#your-model), press
-**Load local file** and pick your model. Place and describe your markers, choose a marker style and a starting
-view, then copy the ready-made HTML and download the markers file. Your model is opened by your browser only:
+**Load local file** and pick your model. Set which way is the front if the file arrives lying on its side,
+place and describe your markers, choose a marker style, a starting view and which buttons to offer, then copy
+the ready-made HTML and download the markers file. Your model is opened by your browser only:
 it is never uploaded and never leaves your computer.
 
 **On your own site:**
@@ -174,7 +175,9 @@ await viewer.ready;              // resolves when the model is shown, rejects if
 
 viewer.setView('front');         // or a direction: [1, -1, 0.5]
 viewer.resetView();
-viewer.setGizmo(true);           // show the view cube
+viewer.setViewCube(true);        // show the view cube (unless viewCube is 'off')
+viewer.setRotation([90, 0, 0]);  // turn the model; markers turn with it
+viewer.setFrontFromView();       // make what is on screen the front view; returns the rotation
 viewer.getView();                // current camera as { view: [x, y, z], zoom } for data-view / data-zoom
 viewer.setMeasureMode(true);
 viewer.getMeasurements();        // [{ distance, delta: [dx, dy, dz], a, b, units }]
