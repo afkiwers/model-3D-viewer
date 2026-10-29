@@ -21,6 +21,8 @@ no framework. Point it at a `.step` / `.stp` file on your server and visitors ge
 
 * **Orbit, pan and zoom** with mouse, trackpad or touch. Zoom goes towards the cursor, and a
   double-click makes that point the new centre of rotation.
+* **Orientation controls**: an X/Y/Z axis gizmo in the corner (drag it, or click an axis to look along it)
+  and buttons that turn, tilt and roll the model in exact 15° steps.
 * **A ruler** that snaps to corners and edges and shows the distance plus ΔX / ΔY / ΔZ.
 * **Markers**: numbered hotspots that open an animated card with a title and description.
   The camera flies to each one.
@@ -57,7 +59,9 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `zoom` | `1` | Starting zoom. `1` fits the model to the view, `2` is twice as close, `0.5` twice as far. |
 | `view` | `iso` | Starting view: `iso`, `front`, `back`, `left`, `right`, `top`, `bottom`, or a camera direction such as `"1,-2,1"`. |
 | `rotation` | `0,0,0` | Extra rotation of the model, in degrees about X, Y and Z. |
-| `up` | `z` | Which model axis points up: `z` (most CAD programs) or `y` (SolidWorks and some others). |
+| `up` | `z` | Which model axis points up: `z` (most CAD programs) or `y` (SolidWorks and some others). Sets which way the standard views face. |
+| `orbit` | `free` | How dragging turns the model. `free` turns it in any direction with no limits; `turntable` keeps the up axis upright and stops at the top and bottom. |
+| `gizmo` | `false` | Show the orientation controls from the start. Visitors can always open them with the axes button. |
 | `units` | `mm` | Units for sizes and measurements: `mm`, `cm`, `m`, `in` or `ft`. The model is converted. |
 | `precision` | `2` | Decimal places in measurements. |
 | `download` | `true` | Show the download button. `false` hides it and blocks `viewer.download()`. Can be changed later with `viewer.setDownload()`. |
@@ -124,7 +128,7 @@ Put them in a JSON file next to the model:
 | `position` | yes | Point on the model, in the model's own coordinates. |
 | `title` | no | Card heading and the label in the bottom bar. |
 | `description` | no | Card text. HTML is allowed (paragraphs, links, lists, images). |
-| `camera` | no | Where the camera goes when the marker opens. Without it the view just recentres on the marker. |
+| `camera` | no | Where the camera goes when the marker opens: `position`, `target` and optionally `up` (its roll). Without it the view just recentres on the marker. |
 | `image` | no | Picture shown across the top of the card. |
 
 Descriptions are inserted as HTML, so only use text you wrote yourself, never text typed in by visitors.
@@ -170,6 +174,7 @@ await viewer.ready;              // resolves when the model is shown, rejects if
 
 viewer.setView('front');         // or a direction: [1, -1, 0.5]
 viewer.resetView();
+viewer.setGizmo(true);           // show the orientation controls
 viewer.getView();                // current camera as { view: [x, y, z], zoom } for data-view / data-zoom
 viewer.setMeasureMode(true);
 viewer.getMeasurements();        // [{ distance, delta: [dx, dy, dz], a, b, units }]

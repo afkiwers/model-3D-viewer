@@ -61,6 +61,8 @@
     downloadUrl: null,     // file to download; defaults to src
     downloadName: null,    // file name for the download; defaults to the name in the URL
     measure: true,         // show the ruler button
+    orbit: 'free',         // 'free': turn the model any way; 'turntable': keep the up axis upright
+    gizmo: false,          // show the orientation controls (axes and step buttons) from the start
     views: true,           // show the standard views menu
     fullscreen: true,      // show the fullscreen button
     info: true,            // show the file name and overall size
@@ -99,6 +101,7 @@
 
   const ICONS = {
     home: '<path d="M3.5 11.5 12 4.5l8.5 7"/><path d="M6 10v9.5h12V10"/>',
+    axes: '<path d="M6 18 12 12M12 12V4.5M12 12l7 4"/><circle cx="5" cy="19" r="1.6"/><circle cx="12" cy="3.5" r="1.6"/><circle cx="20" cy="16.5" r="1.6"/>',
     views: '<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><path d="M12 12 20 7.5M12 12 4 7.5M12 12v9"/>',
     ruler: '<path d="M3.5 15.5 15.5 3.5l5 5-12 12z"/><path d="M6.5 12.5l2 2M9.5 9.5l1.5 1.5M12.5 6.5l2 2"/>',
     clear: '<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>',
@@ -164,6 +167,24 @@
 .sv-error .sv-spinner,.sv-error .sv-progress{display:none}
 .sv-error p{max-width:340px;margin:0;color:#b91c1c}
 @keyframes sv-spin{to{transform:rotate(360deg)}}
+.sv-gizmo{position:absolute;left:10px;bottom:52px;z-index:1;display:flex;align-items:center;gap:6px;padding:6px;border-radius:12px;background:var(--sv-ui-bg);
+  border:1px solid var(--sv-ui-border);box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 14px rgba(0,0,0,.08);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.sv-gizmo[hidden]{display:none}
+.sv-gizmo svg.sv-axes{width:96px;height:96px;display:block;cursor:grab;touch-action:none;overflow:visible}
+.sv-gizmo svg.sv-axes:active{cursor:grabbing}
+.sv-axes .sv-ring{fill:rgba(15,23,42,.04);stroke:rgba(15,23,42,.12)}
+.sv-axes line{stroke-width:2.5;stroke-linecap:round}
+.sv-axes .sv-end{cursor:pointer}
+.sv-axes .sv-end circle{stroke:#fff;stroke-width:1.5}
+.sv-axes .sv-end.sv-neg circle{fill-opacity:.35}
+.sv-axes .sv-end:hover circle{stroke:#111827;stroke-width:2}
+.sv-axes text{font:700 9px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:#fff;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.sv-pad{display:grid;grid-template-columns:repeat(3,26px);grid-auto-rows:26px;gap:2px}
+.sv-pad button{all:unset;box-sizing:border-box;display:grid;place-items:center;border-radius:6px;color:var(--sv-ui-fg);cursor:pointer}
+.sv-pad button:hover{background:rgba(15,23,42,.08)}
+.sv-pad button:focus-visible{outline:2px solid var(--sv-accent)}
+.sv-pad svg{width:16px;height:16px}
+@media (pointer:coarse){.sv-pad{grid-template-columns:repeat(3,34px);grid-auto-rows:34px}}
 .sv-markers{position:absolute;inset:0;pointer-events:none}
 .sv-marker{all:unset;box-sizing:border-box;position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;display:grid;place-items:center;
   background:rgba(17,24,39,.6);border:2px solid #fff;color:#fff;font:700 12px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;cursor:pointer;pointer-events:auto;
@@ -653,6 +674,7 @@
     o.rotation = [0, 1, 2].map((i) => Number(o.rotation[i]) || 0);
     o.zoom = Number(o.zoom) > 0 ? Number(o.zoom) : 1;
     o.up = String(o.up).toLowerCase() === 'y' ? 'y' : 'z';
+    o.orbit = o.orbit === 'turntable' ? 'turntable' : 'free';
     if (!UNITS[o.units]) o.units = 'mm';
     if (!QUALITY[o.quality]) o.quality = 'normal';
     return o;
@@ -735,9 +757,10 @@
       return this.camera.position.distanceTo(this.target);
     }
 
-    setPose(target, position) {
+    setPose(target, position, up) {
       this.target.copy(target);
       this.camera.position.copy(position);
+      this.camera.up.copy(up || this.viewer.upVec);
       this._changed();
     }
 
@@ -752,7 +775,12 @@
       this.velocity.set(0, 0);
     }
 
-    rotate(dx, dy) {
+    // Drag rotation. 'free' turns about the screen axes with no limits; 'turntable' keeps the up axis upright.
+    rotate(dx, dy, free) {
+      if (free || this.orbit !== 'turntable') {
+        this.turn(-dx * this.rotateSpeed, -dy * this.rotateSpeed);
+        return;
+      }
       const up = this.camera.up;
       const offset = this.camera.position.clone().sub(this.target);
       offset.applyAxisAngle(up, -dx * this.rotateSpeed);
@@ -761,6 +789,27 @@
       const axis = new THREE.Vector3().crossVectors(up, offset);
       if (axis.lengthSq() > 1e-12) offset.applyAxisAngle(axis.normalize(), next - polar);
       this.camera.position.copy(this.target).add(offset);
+      this._changed();
+    }
+
+    // The camera pose after turning by `yaw` (about the screen's vertical axis), `pitch` (horizontal axis)
+    // and `roll` (viewing axis), in radians. Positive yaw moves the camera right, positive pitch moves it down.
+    poseAfterTurn(yaw, pitch, roll) {
+      const cam = this.camera;
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quaternion);
+      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cam.quaternion);
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
+      const q = new THREE.Quaternion().setFromAxisAngle(up, yaw || 0)
+        .multiply(new THREE.Quaternion().setFromAxisAngle(right, pitch || 0))
+        .multiply(new THREE.Quaternion().setFromAxisAngle(forward, roll || 0));
+      const offset = cam.position.clone().sub(this.target).applyQuaternion(q);
+      return { target: this.target.clone(), position: this.target.clone().add(offset), up: up.applyQuaternion(q) };
+    }
+
+    turn(yaw, pitch, roll) {
+      const pose = this.poseAfterTurn(yaw, pitch, roll);
+      this.camera.position.copy(pose.position);
+      this.camera.up.copy(pose.up);
       this._changed();
     }
 
@@ -800,18 +849,23 @@
       this._changed();
     }
 
-    animateTo(target, position, ms) {
+    // `up` is the camera's up direction at the end; by default the model's up axis.
+    animateTo(target, position, ms, up) {
       const fromDir = this.camera.position.clone().sub(this.target);
       const toDir = position.clone().sub(target);
       const fromDist = fromDir.length(), toDist = toDir.length();
       fromDir.normalize();
       toDir.normalize();
+      const fromUp = this.camera.up.clone().normalize();
+      const toUp = (up || this.viewer.upVec).clone().normalize();
       this.velocity.set(0, 0);
       this.anim = {
         t0: performance.now(), ms: ms || 500,
         fromT: this.target.clone(), toT: target.clone(),
         fromDir, fromDist, toDist,
         rot: new THREE.Quaternion().setFromUnitVectors(fromDir, toDir),
+        fromUp,
+        upRot: new THREE.Quaternion().setFromUnitVectors(fromUp, toUp),
       };
       this.viewer.requestRender();
     }
@@ -835,6 +889,7 @@
         const dist = a.fromDist * Math.pow(a.toDist / a.fromDist, e);
         this.target.lerpVectors(a.fromT, a.toT, e);
         this.camera.position.copy(this.target).addScaledVector(dir, dist);
+        this.camera.up.copy(a.fromUp).applyQuaternion(new THREE.Quaternion().slerp(a.upRot, e));
         this._changed();
         if (t < 1) active = true;
         else this.anim = null;
@@ -846,7 +901,11 @@
         active = true;
       }
       if (this.autoRotate && !this.viewer._interacted) {
-        this.rotate((-this.autoRotate * DEG * dt) / 1000 / this.rotateSpeed, 0);
+        // Spin about the model's up axis, like a turntable.
+        const angle = (-this.autoRotate * DEG * dt) / 1000;
+        this.camera.position.sub(this.target).applyAxisAngle(this.viewer.upVec, angle).add(this.target);
+        this.camera.up.applyAxisAngle(this.viewer.upVec, angle);
+        this._changed();
         active = true;
       }
       return active;
@@ -1038,23 +1097,25 @@
       this.markers.forEach((m, i) => m.el.classList.toggle('sv-active', i === index));
       this.el.classList.remove('sv-markers-off');
       const cam = mk.data.camera;
-      let target, position;
+      let target, position, up;
       if (cam && cam.position && cam.target) {
         target = this.model.localToWorld(new THREE.Vector3().fromArray(cam.target));
         position = this.model.localToWorld(new THREE.Vector3().fromArray(cam.position));
+        if (Array.isArray(cam.up)) up = new THREE.Vector3().fromArray(cam.up).applyQuaternion(this.model.quaternion);
       } else {
         target = this.model.localToWorld(mk.pos.clone());
         position = this.camera.position.clone().add(target.clone().sub(this.controls.target));
+        up = this.camera.up.clone();
       }
       if (this.el.clientWidth < 520) {
         // The card covers the lower half on narrow screens: move the view so the marker sits near the top.
-        const basis = new THREE.Matrix4().lookAt(position, target, this.camera.up);
+        const basis = new THREE.Matrix4().lookAt(position, target, up || this.upVec);
         const screenUp = new THREE.Vector3().setFromMatrixColumn(basis, 1);
         const shift = 0.27 * 2 * position.distanceTo(target) * Math.tan((this.camera.fov * DEG) / 2);
         target.addScaledVector(screenUp, -shift);
         position.addScaledVector(screenUp, -shift);
       }
-      this.controls.animateTo(target, position, cam ? 900 : 700);
+      this.controls.animateTo(target, position, cam ? 900 : 700, up);
       this._showCard(mk, index);
       this._syncNav();
       this._syncEditor();
@@ -1106,9 +1167,20 @@
       const round = (a) => a.map((v) => Math.round(v * 1000) / 1000);
       return this.markers.map((m) => {
         const out = Object.assign({}, m.data, { position: round(m.pos.toArray()) });
-        if (out.camera) out.camera = { position: round(out.camera.position), target: round(out.camera.target) };
+        if (out.camera) {
+          const c = out.camera;
+          out.camera = { position: round(c.position), target: round(c.target) };
+          if (Array.isArray(c.up)) out.camera.up = round(c.up);
+        }
         return out;
       });
+    }
+
+    /** Show or hide the orientation controls in the bottom-left corner. */
+    setGizmo(on) {
+      this.gizmo.hidden = !on;
+      this.btn.gizmo.setAttribute('aria-pressed', String(!!on));
+      this.requestRender();
     }
 
     /** Download the model file. Does nothing while downloads are disabled. */
@@ -1321,6 +1393,7 @@
         this.btn[key] = b;
       };
       addBtn('home', 'Reset view', 'home', () => this.resetView());
+      addBtn('gizmo', 'Orientation controls', 'axes', () => this.setGizmo(this.gizmo.hidden), (b) => b.setAttribute('aria-pressed', 'false'));
       if (o.views) addBtn('views', 'Standard views', 'views', () => this._toggleMenu(), (b) => b.setAttribute('aria-expanded', 'false'));
       if (o.measure) {
         addBtn('measure', 'Measure distance', 'ruler', () => this.setMeasureMode(!this.measureMode), (b) => b.setAttribute('aria-pressed', 'false'));
@@ -1381,7 +1454,8 @@
       this.statusEl = el('div', 'sv-status', '<div class="sv-spinner"></div><p></p><div class="sv-progress"><i></i></div>');
       this.statusEl.hidden = true;
 
-      this._ui = [this.svg, this.layer, this.markerLayer, this.toolbar, this.menu, this.bottom, this.editor, this.statusEl];
+      this._buildGizmo();
+      this._ui = [this.svg, this.layer, this.markerLayer, this.toolbar, this.menu, this.gizmo, this.bottom, this.editor, this.statusEl];
       root.append(...this._ui);
 
       const onKey = (e) => {
@@ -1468,6 +1542,7 @@
     _afterLoad() {
       const o = this.o;
       this.toolbar.hidden = false;
+      if (o.gizmo) this.setGizmo(true);
       if (o.info) {
         const s = this.size;
         const f = (v) => trimZeros(v.toFixed(o.precision));
@@ -1525,6 +1600,7 @@
       this.raycaster = new THREE.Raycaster();
       this.controls = new Controls(this);
       this.controls.autoRotate = this.o.autoRotate;
+      this.controls.orbit = this.o.orbit;
       this._frame = this._frame.bind(this);
 
       this._resize();
@@ -1680,7 +1756,7 @@
     // Camera pose that frames the model when looking from direction `dir`.
     _fitPose(dir, zoom) {
       const cam = this.camera;
-      const basis = new THREE.Matrix4().lookAt(dir, new THREE.Vector3(), cam.up);
+      const basis = new THREE.Matrix4().lookAt(dir, new THREE.Vector3(), this.upVec);
       const right = new THREE.Vector3().setFromMatrixColumn(basis, 0);
       const up = new THREE.Vector3().setFromMatrixColumn(basis, 1);
       const pts = this.samples;
@@ -1741,6 +1817,141 @@
       this._drawOverlay();
     }
 
+    // --- orientation controls ------------------------------------------------
+
+    _buildGizmo() {
+      const g = (this.gizmo = el('div', 'sv-gizmo'));
+      g.hidden = true; // shown once the model is in (see _afterLoad)
+      const svg = (this.axesSvg = svgEl('svg'));
+      svg.setAttribute('class', 'sv-axes');
+      svg.setAttribute('viewBox', '-50 -50 100 100');
+      svg.setAttribute('role', 'group');
+      svg.setAttribute('aria-label', 'Model axes. Drag to rotate, click an axis to look along it.');
+      const ring = svgEl('circle');
+      ring.setAttribute('class', 'sv-ring');
+      ring.setAttribute('r', '46');
+      svg.appendChild(ring);
+      const colors = { x: '#e5484d', y: '#30a46c', z: '#3e63dd' };
+      this.axisParts = [];
+      for (const axis of ['x', 'y', 'z']) {
+        const line = svgEl('line');
+        line.setAttribute('stroke', colors[axis]);
+        line.setAttribute('x1', 0);
+        line.setAttribute('y1', 0);
+        for (const sign of [1, -1]) {
+          const end = svgEl('g');
+          end.setAttribute('class', 'sv-end' + (sign < 0 ? ' sv-neg' : ''));
+          const label = (sign < 0 ? '−' : '') + axis.toUpperCase();
+          end.setAttribute('aria-label', 'Look from ' + label);
+          const title = svgEl('title');
+          title.textContent = 'Look from ' + label;
+          const dot = svgEl('circle');
+          dot.setAttribute('r', sign > 0 ? 9 : 7);
+          dot.setAttribute('fill', colors[axis]);
+          end.append(title, dot);
+          if (sign > 0) {
+            const text = svgEl('text');
+            text.textContent = axis.toUpperCase();
+            end.appendChild(text);
+          }
+          end.dataset.axis = axis;
+          end.dataset.sign = sign;
+          this.axisParts.push({ axis, sign, end, line: sign > 0 ? line : null, depth: 0 });
+        }
+        this.axisParts.push({ axis, sign: 0, line, end: null, depth: 0 });
+      }
+      g.appendChild(svg);
+
+      // Dragging the axes turns the model freely; a click on an axis end looks along that axis.
+      let drag = null;
+      svg.addEventListener('pointerdown', (e) => {
+        if (!this.controls) return;
+        svg.setPointerCapture(e.pointerId);
+        this.controls.stop();
+        this._interact();
+        drag = { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, end: e.target.closest('.sv-end') };
+      });
+      svg.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        this.controls.rotate((e.clientX - drag.x) * 1.4, (e.clientY - drag.y) * 1.4, true);
+        drag.x = e.clientX;
+        drag.y = e.clientY;
+      });
+      const end = (e) => {
+        if (!drag) return;
+        const moved = Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY);
+        if (moved < 4 && drag.end && e.type === 'pointerup') {
+          const dir = new THREE.Vector3();
+          dir[drag.end.dataset.axis] = Number(drag.end.dataset.sign);
+          this.setView(dir.applyQuaternion(this.model.quaternion).toArray());
+        }
+        drag = null;
+      };
+      svg.addEventListener('pointerup', end);
+      svg.addEventListener('pointercancel', end);
+
+      const pad = el('div', 'sv-pad');
+      const arrow = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+      const buttons = [
+        ['Roll left', arrow('<path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/>'), 0, 0, 1],
+        ['Tilt up', arrow('<path d="m6 15 6-6 6 6"/>'), 0, 1, 0],
+        ['Roll right', arrow('<path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4h-4"/>'), 0, 0, -1],
+        ['Turn left', arrow('<path d="m15 6-6 6 6 6"/>'), 1, 0, 0],
+        ['Reset view', icon('home'), null],
+        ['Turn right', arrow('<path d="m9 6 6 6-6 6"/>'), -1, 0, 0],
+        null,
+        ['Tilt down', arrow('<path d="m6 9 6 6 6-6"/>'), 0, -1, 0],
+        null,
+      ];
+      for (const def of buttons) {
+        if (!def) {
+          pad.appendChild(el('span'));
+          continue;
+        }
+        const [label, html, yaw, pitch, roll] = def;
+        const b = el('button', null, html);
+        b.type = 'button';
+        b.title = yaw === null ? label : label + ' 15° (Shift: 5°)';
+        b.setAttribute('aria-label', b.title);
+        b.addEventListener('click', (e) => {
+          if (!this.controls) return;
+          this._interact();
+          if (yaw === null) return this.resetView();
+          const step = (e.shiftKey ? 5 : 15) * DEG;
+          // Start from where a running step will end, so quick clicks add up exactly.
+          if (this.controls.anim) this.controls.update(this.controls.anim.t0 + this.controls.anim.ms);
+          const pose = this.controls.poseAfterTurn(yaw * step, pitch * step, roll * step);
+          this.controls.animateTo(pose.target, pose.position, 220, pose.up);
+        });
+        pad.appendChild(b);
+      }
+      g.appendChild(pad);
+    }
+
+    _drawGizmo() {
+      if (this.gizmo.hidden || !this.model) return;
+      // Sit just above the bottom bar, however tall it is.
+      this.gizmo.style.bottom = this.el.clientHeight - this.bottom.offsetTop + 6 + 'px';
+      const toCamera = this.camera.quaternion.clone().invert();
+      const v = new THREE.Vector3();
+      const R = 34;
+      for (const part of this.axisParts) {
+        v.set(0, 0, 0);
+        v[part.axis] = part.sign || 1;
+        v.applyQuaternion(this.model.quaternion).applyQuaternion(toCamera);
+        const x = v.x * R, y = -v.y * R;
+        if (part.end) part.end.setAttribute('transform', 'translate(' + x.toFixed(2) + ' ' + y.toFixed(2) + ')');
+        if (part.sign === 0) {
+          part.line.setAttribute('x2', x.toFixed(2));
+          part.line.setAttribute('y2', y.toFixed(2));
+        }
+        // Lines sit just behind their own end, so ends nearer the viewer are drawn on top.
+        part.depth = v.z * (part.sign || 1) - (part.sign === 0 ? 0.01 : 0);
+      }
+      const order = this.axisParts.slice().sort((a, b) => a.depth - b.depth);
+      for (const part of order) this.axesSvg.appendChild(part.end || part.line);
+    }
+
     // --- markers -------------------------------------------------------------
 
     _toggleMarkers() {
@@ -1779,9 +1990,11 @@
     }
 
     _currentCamera() {
+      const up = this.camera.up.clone().applyQuaternion(this.model.quaternion.clone().invert()).normalize();
       return {
         position: this.model.worldToLocal(this.camera.position.clone()).toArray(),
         target: this.model.worldToLocal(this.controls.target.clone()).toArray(),
+        up: up.toArray().map((v) => Math.round(v * 1000) / 1000),
       };
     }
 
@@ -2082,7 +2295,7 @@
         const hit = this._surfaceAt(e.clientX, e.clientY);
         if (!hit) return;
         const shift = hit.point.clone().sub(this.controls.target);
-        this.controls.animateTo(hit.point, this.camera.position.clone().add(shift), 350);
+        this.controls.animateTo(hit.point, this.camera.position.clone().add(shift), 350, this.camera.up.clone());
       };
       c.addEventListener('pointerdown', onDown);
       c.addEventListener('pointerup', onUp);
@@ -2232,6 +2445,7 @@
       }
 
       for (const mk of this.markers) place(mk.el, toScreen(mk.pos));
+      this._drawGizmo();
       this._placeCard(w, h, toScreen);
 
       if (!this.hoverDot) {
