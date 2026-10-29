@@ -11,12 +11,22 @@
     h2 { margin: 40px 0 8px; font-size: 20px; }
     p { margin: 0 0 16px; color: #4b5563; }
     .step-viewer { border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.06); }
+    header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+    .release { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: #111827; color: #fff;
+      font-size: 14px; font-weight: 500; text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .release:hover { background: #ef5a24; }
+    .release:focus-visible { outline: 2px solid #ef5a24; outline-offset: 2px; }
+    .release span { opacity: .7; font-variant-numeric: tabular-nums; }
+    .release span:empty { display: none; }
     pre { overflow-x: auto; padding: 14px 16px; border-radius: 10px; background: #111827; color: #e5e7eb; font-size: 13px; line-height: 1.5; }
   </style>
 </head>
 <body>
 <main>
-  <h1>STEP Viewer</h1>
+  <header>
+    <h1>STEP Viewer</h1>
+    <a class="release" href="https://github.com/afkiwers/model-3D-viewer/releases/latest">View latest release <span id="release-tag"></span></a>
+  </header>
   <p>Drag to rotate, right-drag to pan, scroll to zoom, double-click to set the rotation centre. Click a numbered marker to read about that part.</p>
 
   <div class="step-viewer"
@@ -46,5 +56,14 @@
 </main>
 
 <script src="step-viewer.js"></script>
+<script>
+  // Show the newest release's version on the button; the link works without it.
+  fetch('https://api.github.com/repos/afkiwers/model-3D-viewer/releases/latest')
+    .then((res) => (res.ok ? res.json() : null))
+    .then((release) => {
+      if (release && release.tag_name) document.getElementById('release-tag').textContent = release.tag_name;
+    })
+    .catch(() => {});
+</script>
 </body>
 </html>
