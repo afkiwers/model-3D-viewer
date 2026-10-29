@@ -61,6 +61,11 @@
     .about-foot .primary { border: 1px solid #ea580c; background: #ea580c; color: #fff; }
     .about-foot .primary:hover { background: #c2410c; }
     .about-foot svg { width: 16px; height: 16px; }
+    .themes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; font-size: 14px; color: #4b5563; }
+    .themes button { font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #1f2937; cursor: pointer; }
+    .themes button:hover { border-color: #ef5a24; }
+    .themes button[aria-pressed="true"] { background: #1f2937; border-color: #1f2937; color: #fff; }
+    .themes button:focus-visible { outline: 2px solid #ef5a24; outline-offset: 2px; }
     pre { overflow-x: auto; padding: 14px 16px; border-radius: 10px; background: #111827; color: #e5e7eb; font-size: 13px; line-height: 1.5; }
   </style>
 </head>
@@ -75,7 +80,15 @@
   </header>
   <p>Drag to rotate, right-drag to pan, scroll to zoom, double-click to set the rotation centre. Click a numbered marker to read about that part.</p>
 
-  <div class="step-viewer"
+  <div class="themes" role="group" aria-label="Marker style">
+    <span>Marker style:</span>
+    <button type="button" data-theme-choice="default" aria-pressed="true">Default</button>
+    <button type="button" data-theme-choice="digital" aria-pressed="false">Digital</button>
+    <button type="button" data-theme-choice="military" aria-pressed="false">Military</button>
+    <button type="button" data-theme-choice="agricultural" aria-pressed="false">Agricultural</button>
+  </div>
+
+  <div class="step-viewer" id="main-viewer"
        data-src="models/Connector.stp"
        data-markers="models/Connector.markers.json"
        data-height="560"></div>
@@ -132,6 +145,18 @@
 </dialog>
 
 <script src="step-viewer.js"></script>
+<script>
+  // Marker style buttons: switch the first viewer's theme and open a marker to show it off.
+  document.querySelectorAll('[data-theme-choice]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const viewer = StepViewer.get(document.getElementById('main-viewer'));
+      if (!viewer) return;
+      document.querySelectorAll('[data-theme-choice]').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+      viewer.setTheme(button.dataset.themeChoice);
+      viewer.ready.then(() => { if (viewer.activeMarker == null) viewer.openMarker(0); });
+    });
+  });
+</script>
 <script>
   (function () {
     const repo = 'https://github.com/afkiwers/model-3D-viewer';

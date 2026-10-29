@@ -67,6 +67,7 @@
     help: true,            // show a short controls hint after loading
     markers: null,         // hotspots: URL of a JSON file, or an array (see README)
     editor: false,         // marker editor: click the model to place markers and copy their JSON
+    theme: 'default',      // look of markers and cards: default | digital | military | agricultural
   };
   // Site-wide defaults, e.g. window.StepViewerConfig = { defaults: { download: false } }
   if (config.defaults) Object.assign(DEFAULTS, config.defaults);
@@ -234,6 +235,124 @@
 .sv-editor-head button{all:unset;cursor:pointer;padding:3px 10px;border-radius:6px;background:var(--sv-accent);color:#fff;font-weight:500}
 .sv-editor p{margin:0 0 6px;color:#4b5563;font-size:12px}
 .sv-editor textarea{box-sizing:border-box;width:100%;height:96px;resize:vertical;font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--sv-ui-border);border-radius:6px;padding:6px;background:#fff;color:#111827}
+.sv-card-meta{display:none}
+/* ---- Theme: digital ---- */
+.sv-theme-digital{--sv-accent:#00ff9c}
+.sv-theme-digital .sv-btn[aria-pressed="true"],.sv-theme-digital .sv-btn[aria-expanded="true"]{color:#00140c}
+.sv-theme-digital .sv-card{border-radius:3px;padding:1px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:linear-gradient(135deg,#00ff9c,#00d1ff 55%,#ff2bd6);
+  box-shadow:0 0 0 1px rgba(0,255,156,.2),0 0 28px -4px rgba(0,255,156,.55),0 0 70px -18px #ff2bd6;animation:sv-dg-in .6s both}
+.sv-theme-digital .sv-card.sv-out{animation:sv-dg-out .25s steps(3) both}
+.sv-theme-digital .sv-card-body{border-radius:2px;padding:18px 18px 16px;color:#b6ffdf;
+  background:repeating-linear-gradient(0deg,rgba(0,255,156,.045) 0 1px,transparent 1px 3px),
+    linear-gradient(rgba(0,255,156,.06) 1px,transparent 1px) 0 0/22px 22px,linear-gradient(90deg,rgba(0,255,156,.06) 1px,transparent 1px) 0 0/22px 22px,#03070a;
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-digital .sv-card-body::before{inset:auto 0;top:0;height:35%;transform:translateY(-100%);
+  background:linear-gradient(180deg,transparent,rgba(0,255,156,.13),transparent);animation:sv-dg-scan 2.6s linear infinite}
+.sv-theme-digital .sv-card-body::after{content:"";position:absolute;inset:6px;pointer-events:none;
+  background:linear-gradient(#00ff9c,#00ff9c) 0 0/14px 2px,linear-gradient(#00ff9c,#00ff9c) 0 0/2px 14px,
+    linear-gradient(#00ff9c,#00ff9c) 100% 0/14px 2px,linear-gradient(#00ff9c,#00ff9c) 100% 0/2px 14px,
+    linear-gradient(#00ff9c,#00ff9c) 0 100%/14px 2px,linear-gradient(#00ff9c,#00ff9c) 0 100%/2px 14px,
+    linear-gradient(#00ff9c,#00ff9c) 100% 100%/14px 2px,linear-gradient(#00ff9c,#00ff9c) 100% 100%/2px 14px;background-repeat:no-repeat}
+.sv-theme-digital .sv-card-num{border-radius:2px;width:34px;height:26px;font-size:0;background:#00ff9c;box-shadow:0 0 14px rgba(0,255,156,.7)}
+.sv-theme-digital .sv-card-num::after{content:attr(data-ref);font-size:13px;color:#00140c}
+.sv-theme-digital .sv-card h3{color:#00ff9c;text-transform:uppercase;letter-spacing:.08em;font-size:15px;text-shadow:0 0 8px rgba(0,255,156,.65),2px 0 rgba(255,43,214,.35),-2px 0 rgba(0,209,255,.35)}
+.sv-theme-digital .sv-card h3::after{content:"_";margin-left:3px;animation:sv-blink 1s steps(1) infinite}
+.sv-theme-digital .sv-card-meta{display:block;margin-top:8px;font-size:11px;color:rgba(0,255,156,.6);letter-spacing:.04em}
+.sv-theme-digital .sv-card-meta::before{content:"// "}
+.sv-theme-digital .sv-card-text{color:#b6ffdf;font-size:13px}
+.sv-theme-digital .sv-card-text a{color:#00d1ff}
+.sv-theme-digital .sv-card-close{color:#00ff9c;border-radius:2px}
+.sv-theme-digital .sv-card-close:hover{background:rgba(0,255,156,.15);color:#fff}
+.sv-theme-digital .sv-card-foot{border-top:1px dashed rgba(0,255,156,.35);color:rgba(0,255,156,.6);text-transform:uppercase;letter-spacing:.06em;font-size:11px}
+.sv-theme-digital .sv-card-foot button{color:#00ff9c;border-radius:2px}
+.sv-theme-digital .sv-card-foot button:hover{background:#00ff9c;color:#00140c}
+.sv-theme-digital .sv-marker{border-radius:3px;background:rgba(0,12,8,.8);border:1.5px solid #00ff9c;color:#00ff9c;font-family:ui-monospace,Menlo,Consolas,monospace;box-shadow:0 0 10px rgba(0,255,156,.55)}
+.sv-theme-digital .sv-marker:hover,.sv-theme-digital .sv-marker:focus-visible,.sv-theme-digital .sv-marker.sv-active{background:#00ff9c;color:#00140c}
+.sv-theme-digital .sv-marker.sv-active::before,.sv-theme-digital .sv-marker.sv-active::after{border-radius:3px}
+.sv-theme-digital .sv-nav{border-radius:3px;background:rgba(3,7,10,.9);color:#00ff9c;border:1px solid rgba(0,255,156,.5);font-family:ui-monospace,Menlo,Consolas,monospace;box-shadow:0 0 16px -4px rgba(0,255,156,.5)}
+.sv-theme-digital .sv-nav button{border-radius:2px}
+.sv-theme-digital .sv-nav button:hover{background:rgba(0,255,156,.18)}
+.sv-theme-digital .sv-overlay .sv-leader{filter:drop-shadow(0 0 4px #00ff9c)}
+@keyframes sv-dg-in{0%{opacity:0;clip-path:inset(0 0 100% 0)}8%{opacity:1;clip-path:inset(42% 0 44% 0);transform:translateX(-14px)}
+  16%{clip-path:inset(8% 0 72% 0);transform:translateX(12px);filter:hue-rotate(90deg)}24%{clip-path:inset(62% 0 4% 0);transform:translateX(-6px)}
+  34%{clip-path:inset(0 0 34% 0);transform:none;filter:none}46%{clip-path:inset(0);transform:translateX(4px) skewX(-8deg);filter:hue-rotate(-60deg) brightness(1.6)}
+  54%{transform:none;filter:none}62%{opacity:.6}68%{opacity:1}100%{clip-path:inset(0);opacity:1;transform:none}}
+@keyframes sv-dg-out{to{opacity:0;clip-path:inset(48% 0 48% 0)}}
+@keyframes sv-dg-scan{to{transform:translateY(300%)}}
+@keyframes sv-blink{50%{opacity:0}}
+/* ---- Theme: military ---- */
+.sv-theme-military{--sv-accent:#e0b341}
+.sv-theme-military .sv-btn[aria-pressed="true"],.sv-theme-military .sv-btn[aria-expanded="true"]{color:#1c2414}
+.sv-theme-military .sv-card{border-radius:0;padding:1.5px;background:#c8b47e;transform-origin:50% 50%!important;
+  clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);
+  box-shadow:none;filter:drop-shadow(0 14px 22px rgba(10,14,6,.55));animation:sv-mil-in .55s cubic-bezier(.6,0,.2,1) both}
+.sv-theme-military .sv-card.sv-out{animation:sv-mil-out .25s ease-in both}
+.sv-theme-military .sv-card-body{border-radius:0;padding:22px 18px 16px;color:#e9e3c9;
+  clip-path:polygon(15px 0,100% 0,100% calc(100% - 15px),calc(100% - 15px) 100%,0 100%,0 15px);
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 2px,transparent 2px 9px),radial-gradient(120% 90% at 100% 0%,#46553a,transparent 60%),#2b3521;
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-military .sv-card-body::before{inset:0 0 auto 0;height:6px;transform:none;animation:none;
+  background:repeating-linear-gradient(-45deg,#e0b341 0 9px,#1c2414 9px 18px)}
+.sv-theme-military .sv-card-num{border-radius:0;width:auto;min-width:32px;height:24px;padding:0 6px;font-size:0;background:#e0b341;box-shadow:none;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.sv-theme-military .sv-card-num::after{content:attr(data-ref);font:700 13px/1 ui-monospace,Menlo,Consolas,monospace;color:#1c2414}
+.sv-theme-military .sv-card h3{font-family:"Stencil Std",Stencil,"Black Ops One",Impact,"Arial Narrow Bold","Arial Narrow",sans-serif;font-weight:700;
+  text-transform:uppercase;letter-spacing:.12em;font-size:16px;color:#f2e8c4}
+.sv-theme-military .sv-card-meta{display:block;margin-top:9px;padding:4px 8px;font:600 11px/1.3 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;
+  color:#e0b341;background:rgba(0,0,0,.25);border-left:2px solid #e0b341}
+.sv-theme-military .sv-card-meta::before{content:"GRID REF ▸ "}
+.sv-theme-military .sv-card-text{color:#ddd6b8;font-size:13.5px}
+.sv-theme-military .sv-card-text a{color:#e0b341}
+.sv-theme-military .sv-card-close{top:14px;border-radius:0;color:#c8b47e}
+.sv-theme-military .sv-card-close:hover{background:#e0b341;color:#1c2414}
+.sv-theme-military .sv-card-foot{border-top:1px solid rgba(200,180,126,.3);color:#a99a6c;text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+.sv-theme-military .sv-card-foot button{border-radius:0;color:#f2e8c4;letter-spacing:.08em}
+.sv-theme-military .sv-card-foot button:hover{background:#e0b341;color:#1c2414}
+.sv-theme-military .sv-reveal{animation-delay:calc(.35s + var(--d,0) * 90ms)}
+.sv-theme-military .sv-marker{border-radius:2px;background:rgba(28,36,20,.85);border:1.5px solid #c8b47e;color:#f2e8c4;font-family:ui-monospace,Menlo,Consolas,monospace;box-shadow:0 0 0 3px rgba(28,36,20,.35)}
+.sv-theme-military .sv-marker:hover,.sv-theme-military .sv-marker:focus-visible,.sv-theme-military .sv-marker.sv-active{background:#e0b341;border-color:#1c2414;color:#1c2414}
+.sv-theme-military .sv-marker.sv-active::before,.sv-theme-military .sv-marker.sv-active::after{border-radius:0}
+.sv-theme-military .sv-nav{border-radius:0;background:rgba(43,53,33,.92);color:#f2e8c4;border:1px solid #c8b47e;text-transform:uppercase;letter-spacing:.1em;font-size:12px;
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+.sv-theme-military .sv-nav button{border-radius:0}
+.sv-theme-military .sv-nav button:hover{background:rgba(224,179,65,.25)}
+.sv-theme-military .sv-overlay .sv-leader{filter:none;stroke-width:1.5;stroke-dasharray:5 4;stroke-dashoffset:0;opacity:0;animation:sv-fade .2s .3s forwards}
+@keyframes sv-mil-in{0%{opacity:0;transform:scale(0,.015)}35%{opacity:1;transform:scale(1,.015)}45%{transform:scale(1,.015)}100%{opacity:1;transform:none}}
+@keyframes sv-mil-out{to{opacity:0;transform:scale(1,.015)}}
+/* ---- Theme: agricultural ---- */
+.sv-theme-agricultural{--sv-accent:#5a8f29}
+.sv-theme-agricultural .sv-card{border-radius:24px 24px 24px 8px;padding:2px;transform-origin:50% 100%!important;
+  background:linear-gradient(160deg,#9cc456,#5a8f29 45%,#d9a441);
+  box-shadow:0 22px 44px -16px rgba(74,58,20,.5),0 0 0 6px rgba(156,196,86,.15);animation:sv-ag-in .8s cubic-bezier(.2,1.4,.35,1) both}
+.sv-theme-agricultural .sv-card-body{border-radius:22px 22px 22px 6px;padding:18px 20px 18px;color:#4a3f2a;
+  background:radial-gradient(rgba(122,96,40,.07) 1px,transparent 1.2px) 0 0/7px 7px,
+    radial-gradient(130% 70% at 50% 120%,rgba(217,164,65,.28),transparent 60%),linear-gradient(180deg,#fffaf0,#f6edd5);
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-agricultural .sv-card-body::before{inset:-30% -30% auto auto;width:70%;height:70%;transform:scale(.2);opacity:0;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,214,102,.55),transparent 65%);animation:sv-ag-sun 1.4s .2s ease-out forwards}
+.sv-theme-agricultural .sv-card-body::after{content:"";position:absolute;right:44px;top:10px;width:46px;height:46px;pointer-events:none;opacity:.2;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%235a8f29' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M32 62V14'/%3E%3Cpath d='M32 22c-7-2-10-8-10-14 7 1 10 7 10 14zM32 22c7-2 10-8 10-14-7 1-10 7-10 14zM32 36c-7-2-10-8-10-14 7 1 10 7 10 14zM32 36c7-2 10-8 10-14-7 1-10 7-10 14zM32 50c-7-2-10-8-10-14 7 1 10 7 10 14zM32 50c7-2 10-8 10-14-7 1-10 7-10 14z'/%3E%3C/svg%3E") no-repeat center/contain}
+.sv-theme-agricultural .sv-card-num{border-radius:60% 0 60% 0;width:32px;height:32px;background:linear-gradient(135deg,#8fbf45,#4f7f22);box-shadow:0 3px 8px rgba(79,127,34,.35)}
+.sv-theme-agricultural .sv-card h3{font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;font-size:19px;font-weight:700;color:#2f4a17;letter-spacing:0}
+.sv-theme-agricultural .sv-card-text{color:#4a3f2a;font-size:14px}
+.sv-theme-agricultural .sv-card-text a{color:#3f6f1a}
+.sv-theme-agricultural .sv-card-close{color:#7a6a45}
+.sv-theme-agricultural .sv-card-close:hover{background:rgba(90,143,41,.12);color:#2f4a17}
+.sv-theme-agricultural .sv-card-foot{border-top:1.5px dashed rgba(122,96,40,.3);color:#8a7a52}
+.sv-theme-agricultural .sv-card-foot button{color:#3f6f1a;border-radius:999px;font-weight:600}
+.sv-theme-agricultural .sv-card-foot button:hover{background:#5a8f29;color:#fff}
+.sv-theme-agricultural .sv-marker{border-radius:50% 50% 50% 6px;background:#5a8f29;border:2px solid #fffaf0;color:#fff;box-shadow:0 3px 10px rgba(47,74,23,.4)}
+.sv-theme-agricultural .sv-marker:hover,.sv-theme-agricultural .sv-marker:focus-visible,.sv-theme-agricultural .sv-marker.sv-active{background:#d9a441;color:#3b2d0e}
+.sv-theme-agricultural .sv-marker.sv-active::before,.sv-theme-agricultural .sv-marker.sv-active::after{border-color:#d9a441}
+.sv-theme-agricultural .sv-nav{background:rgba(255,250,240,.95);color:#2f4a17;border:1.5px solid rgba(90,143,41,.4);font-family:Georgia,"Iowan Old Style",Palatino,serif}
+.sv-theme-agricultural .sv-nav button:hover{background:rgba(90,143,41,.15)}
+.sv-theme-agricultural .sv-nav .sv-nav-title span{color:#8a7a52;opacity:1}
+.sv-theme-agricultural .sv-overlay .sv-leader{filter:none;stroke-width:2.5}
+.sv-theme-agricultural .sv-overlay .sv-leader-end{fill:#d9a441}
+@keyframes sv-ag-in{0%{opacity:0;transform:translateY(34px) scale(.3) rotate(5deg)}55%{opacity:1;transform:translateY(-6px) scale(1.04) rotate(-1deg)}100%{opacity:1;transform:none}}
+@keyframes sv-ag-sun{to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sv-card-body::after,.sv-card h3::after{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.sv-card,.sv-card-body::before,.sv-reveal,.sv-marker,.sv-marker::before,.sv-marker::after,.sv-overlay .sv-leader{animation:none!important}.sv-overlay .sv-leader{stroke-dashoffset:0}.sv-overlay .sv-leader-end{opacity:1}}
 @media (pointer:coarse){.sv-btn{width:40px;height:40px}.sv-menu button{padding:10px 12px}}
 @media (prefers-reduced-motion:reduce){.sv-spinner{animation-duration:2s}}
@@ -1004,6 +1123,18 @@
       b.setAttribute('aria-label', b.title);
     }
 
+    /**
+     * Change the look of markers and their cards: 'default', 'digital', 'military' or 'agricultural'.
+     * Any other name adds the class sv-theme-<name>, for your own CSS.
+     */
+    setTheme(name) {
+      this.el.classList.remove('sv-theme-' + this.o.theme);
+      this.o.theme = String(name || 'default');
+      this.el.classList.add('sv-theme-' + this.o.theme);
+      // Reopen the card so its entrance plays in the new style.
+      if (this.activeMarker != null) this._showCard(this.markers[this.activeMarker], this.activeMarker);
+    }
+
     toggleFullscreen() {
       const root = this.el;
       const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
@@ -1141,7 +1272,7 @@
     _buildDom() {
       const root = this.el;
       const o = this.o;
-      root.classList.add('sv-root');
+      root.classList.add('sv-root', 'sv-theme-' + o.theme);
       if (!root.hasAttribute('tabindex')) root.tabIndex = 0;
       if (o.width != null) root.style.width = cssSize(o.width);
       if (o.height != null) root.style.height = cssSize(o.height);
@@ -1674,14 +1805,20 @@
       const head = el('div', 'sv-card-head sv-reveal');
       const num = el('span', 'sv-card-num');
       num.textContent = index + 1;
+      num.dataset.ref = String(index + 1).padStart(2, '0');
       const title = el('h3');
       title.textContent = d.title || '';
       head.append(num, title);
+      // Reference and coordinates; only some themes show this line.
+      const meta = el('div', 'sv-card-meta sv-reveal');
+      meta.style.setProperty('--d', 0.5);
+      const f = (v) => this._fmt(v);
+      meta.textContent = 'MKR-' + num.dataset.ref + ' · X ' + f(mk.pos.x) + ' Y ' + f(mk.pos.y) + ' Z ' + f(mk.pos.z) + ' ' + this.o.units;
       const text = el('div', 'sv-card-text sv-reveal');
       text.style.setProperty('--d', 1);
       // Descriptions are written by the site owner, so simple HTML (links, images, lists) is allowed.
       text.innerHTML = d.description || '';
-      body.append(head, text);
+      body.append(head, meta, text);
 
       if (this.o.editor) {
         title.contentEditable = 'true';

@@ -66,6 +66,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `measure` | `true` | Show the ruler button. |
 | `markers` | none | Markers: URL of a JSON file, or an array in JavaScript. See [Markers](#markers). |
 | `editor` | `false` | Marker editor: place markers by clicking and copy their JSON. |
+| `theme` | `default` | Look of the markers and their cards: `default`, `digital`, `military` or `agricultural`. See [Marker themes](#marker-themes). |
 | `views` | `true` | Show the standard views menu. |
 | `fullscreen` | `true` | Show the fullscreen button. |
 | `info` | `true` | Show the file name and overall size (X × Y × Z). |
@@ -168,6 +169,7 @@ viewer.clearMeasurements();
 viewer.openMarker(0);            // 0-based
 viewer.nextMarker(1);            // or -1 for the previous one
 viewer.closeMarker();
+viewer.setTheme('military');     // default | digital | military | agricultural
 viewer.setMarkers([...]);
 viewer.getMarkers();             // current markers as plain data
 viewer.download();               // does nothing while downloads are disabled
@@ -199,6 +201,26 @@ el.addEventListener('stepviewer:marker', (e) => console.log(e.detail.index, e.de
 
 To stop the automatic set-up, add `data-auto-init="false"` to the script tag and call
 `StepViewer.init()` or `StepViewer.create()` yourself.
+
+## Marker themes
+
+Pick a look for the markers, their cards and the marker bar with `data-theme`, the `theme` option, or
+`viewer.setTheme()` at any time. Each theme has its own entrance animation.
+
+```html
+<div class="step-viewer" data-src="/models/part.step" data-markers="/models/part.markers.json" data-theme="digital"></div>
+```
+
+| `default` | `digital` |
+| --- | --- |
+| ![Default theme](docs/themes/default.png) | ![Digital theme](docs/themes/digital.png) |
+| Dark glass, turning gradient border, springs out of the marker. | Neon on black, scanlines, corner brackets and coordinates; glitches in. |
+| **`military`** | **`agricultural`** |
+| ![Military theme](docs/themes/military.png) | ![Agricultural theme](docs/themes/agricultural.png) |
+| Olive and tan, stencil type, hazard stripe and grid reference; opens like a tactical display. | Cream paper, serif type, leaf-shaped badges; sprouts up from below. |
+
+Any other name adds the class `sv-theme-<name>` to the viewer, so you can write your own theme in CSS,
+starting from the `.sv-theme-digital` rules in `step-viewer.js`.
 
 ## Styling
 
