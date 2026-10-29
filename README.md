@@ -1,5 +1,21 @@
 # STEP Viewer
 
+## Try the demo
+
+**Live demo: https://afkiwers.github.io/model-3D-viewer/**
+
+`index.html` shows two viewers using `models/Connector.stp`. It is published to GitHub Pages by
+`.github/workflows/pages.yml` each time a release is published (or when the workflow is run by hand
+from the Actions tab), so the live demo always shows the latest release. To run it locally instead
+(browsers won't load files from `file://`), serve the folder:
+
+```sh
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
+
+## What it does
+
 A drop-in 3D viewer for STEP files on your website. Plain JavaScript in one file, no build step,
 no framework. Point it at a `.step` / `.stp` file on your server and visitors get:
 
@@ -27,20 +43,6 @@ That's it. Every element with `class="step-viewer"` and a `data-src` is turned i
 the page loads. The model only starts loading once it is scrolled into view.
 
 The file must be served from your own site (or from a server that allows cross-origin requests).
-
-### Try the demo
-
-**Live demo: https://afkiwers.github.io/model-3D-viewer/**
-
-`index.html` shows two viewers using `models/Connector.stp`. It is published to GitHub Pages by
-`.github/workflows/pages.yml` each time a release is published (or when the workflow is run by hand
-from the Actions tab), so the live demo always shows the latest release. To run it locally instead (browsers won't
-load files from `file://`), serve the folder:
-
-```sh
-python3 -m http.server 8000
-# then open http://localhost:8000
-```
 
 ## Options
 
