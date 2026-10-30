@@ -40,7 +40,8 @@
 
   const DEFAULTS = {
     src: null,             // URL of the STEP file (required)
-    format: null,          // 'step' | 'iges' | 'brep'; guessed from the file extension
+    format: null,          // 'step' | 'iges' | 'brep' | 'vrml'; guessed from the file extension
+    fileUnits: 'mm',       // units inside files that do not say (VRML): mm | cm | m | in | 0.1in
     width: null,           // CSS width, numbers are pixels. Default: 100%
     height: null,          // CSS height, numbers are pixels. Default: 480px
     zoom: 1,               // 1 = model fills the view, 2 = twice as close
@@ -77,6 +78,8 @@
   if (config.defaults) Object.assign(DEFAULTS, config.defaults);
 
   const UNITS = { mm: 'millimeter', cm: 'centimeter', m: 'meter', in: 'inch', ft: 'foot' };
+  // Millimetres per unit, for files without units of their own.
+  const FILE_UNITS = { mm: 1, cm: 10, m: 1000, in: 25.4, '0.1in': 2.54, ft: 304.8 };
 
   const QUALITY = {
     low: { linearDeflection: 0.003, angularDeflection: 0.7 },
@@ -143,7 +146,7 @@
 .sv-toolbar{position:absolute;top:10px;right:10px;display:flex;gap:2px;padding:3px;background:var(--sv-ui-bg);border:1px solid var(--sv-ui-border);border-radius:10px;
   box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 14px rgba(0,0,0,.08);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .sv-btn{all:unset;box-sizing:border-box;width:32px;height:32px;display:grid;place-items:center;border-radius:7px;color:var(--sv-ui-fg);cursor:pointer}
-.sv-btn[hidden]{display:none}
+.sv-btn[hidden],.sv-toolbar[hidden]{display:none}
 .sv-btn:hover{background:rgba(15,23,42,.07)}
 .sv-btn[aria-pressed="true"],.sv-btn[aria-expanded="true"]{background:var(--sv-accent);color:#fff}
 .sv-btn:focus-visible,.sv-menu button:focus-visible{outline:2px solid var(--sv-accent);outline-offset:1px}
@@ -550,6 +553,294 @@
     return { result: { success: true, meshes }, transfer };
   }
 
+  // VRML is parsed in a worker of its own (no WebAssembly needed). If workers are blocked, on the main thread.
+  let vrmlPromise = null;
+
+  function getVrmlEngine() {
+    if (!vrmlPromise) {
+      vrmlPromise = new Promise((resolve) => {
+        const local = { parse: (buffer, scale) => parseVrml(buffer, scale) };
+        const source = parseVrml.toString() + '\nonmessage = async (e) => {\n'
+          + '  const { id, buffer, scale } = e.data;\n'
+          + '  try {\n'
+          + '    const result = await parseVrml(buffer, scale);\n'
+          + '    postMessage({ id, result }, result.meshes.flatMap((m) => [m.pos.buffer, m.nrm.buffer, m.idx.buffer]));\n'
+          + '  } catch (err) { postMessage({ id, error: (err && err.message) || String(err) }); }\n'
+          + '};';
+        let worker;
+        try {
+          worker = new Worker(URL.createObjectURL(new Blob([source], { type: 'text/javascript' })));
+        } catch (err) {
+          resolve(local);
+          return;
+        }
+        const pending = new Map();
+        let seq = 0;
+        worker.onmessage = (e) => {
+          const p = pending.get(e.data.id);
+          pending.delete(e.data.id);
+          if (p) e.data.error ? p.rej(new Error(e.data.error)) : p.res(e.data.result);
+        };
+        worker.onerror = (e) => {
+          if (e.preventDefault) e.preventDefault();
+          // The worker could not run (for example a strict Content Security Policy): parse here instead.
+          pending.forEach((p) => local.parse(p.buffer, p.scale).then(p.res, p.rej));
+          pending.clear();
+          vrmlPromise = Promise.resolve(local);
+        };
+        resolve({
+          parse(buffer, scale) {
+            return new Promise((res, rej) => {
+              const id = ++seq;
+              pending.set(id, { res, rej, buffer, scale });
+              worker.postMessage({ id, buffer, scale }); // copied, so the main thread can still parse it
+            });
+          },
+        });
+      });
+    }
+    return vrmlPromise;
+  }
+
+  // Reads VRML 2.0 (VRML97) files, plain or gzip-compressed, into the same mesh format as the STEP reader.
+  // Handles Transform, Group and friends, DEF/USE, Material colours and IndexedFaceSet with creaseAngle.
+  // Self-contained: it also runs inside the worker.
+  async function parseVrml(buffer, scale) {
+    let bytes = new Uint8Array(buffer);
+    if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    const text = new TextDecoder().decode(bytes);
+    if (/^#VRML V1\.0/.test(text)) throw new Error('VRML 1.0 files are not supported. Export the model as VRML 2.0 (VRML97).');
+    if (!/^#VRML V2\.0/.test(text)) throw new Error('This is not a VRML 2.0 file.');
+
+    // Tokens: strings, brackets and words. Commas count as white space; comments are dropped.
+    const tokens = [];
+    const re = /"(?:[^"\\]|\\.)*"|[{}[\]]|#[^\n\r]*|[^\s,{}[\]"#]+/g;
+    let match;
+    while ((match = re.exec(text))) if (match[0][0] !== '#') tokens.push(match[0]);
+
+    let i = 0;
+    const defs = new Map();
+    const isNum = (t) => /^[+-]?(\d|\.\d)/.test(t);
+    const isNodeStart = () => tokens[i] === 'DEF' || tokens[i] === 'USE' || (tokens[i + 1] === '{' && /^[A-Za-z_]/.test(tokens[i]));
+    const scalar = (t) => (isNum(t) ? +t : t[0] === '"' ? t.slice(1, -1) : t === 'TRUE' ? true : t === 'FALSE' ? false : t);
+    const skipBalanced = (open, close) => {
+      if (tokens[i] !== open) return;
+      let depth = 0;
+      do {
+        if (tokens[i] === open) depth++;
+        else if (tokens[i] === close) depth--;
+        i++;
+      } while (depth > 0 && i < tokens.length);
+    };
+
+    function parseValue() {
+      const t = tokens[i];
+      if (t === '[') {
+        i++;
+        const items = [];
+        while (i < tokens.length && tokens[i] !== ']') items.push(isNodeStart() ? parseNode() : scalar(tokens[i++]));
+        i++;
+        return items;
+      }
+      if (isNodeStart()) return parseNode();
+      if (isNum(t)) {
+        const run = [];
+        while (i < tokens.length && isNum(tokens[i])) run.push(+tokens[i++]);
+        return run.length === 1 ? run[0] : run;
+      }
+      i++;
+      return t === 'NULL' ? null : scalar(t);
+    }
+
+    function parseNode() {
+      let t = tokens[i++];
+      if (t === 'USE') return defs.get(tokens[i++]) || null;
+      if (t === 'ROUTE') {
+        i += 3; // ROUTE a.b TO c.d
+        return null;
+      }
+      if (t === 'PROTO' || t === 'EXTERNPROTO') {
+        i++; // name
+        skipBalanced('[', ']');
+        if (t === 'PROTO') skipBalanced('{', '}');
+        else parseValue(); // url
+        return null;
+      }
+      let name = null;
+      if (t === 'DEF') {
+        name = tokens[i++];
+        t = tokens[i++];
+      }
+      const node = { type: t, fields: {} };
+      if (name) defs.set(name, node);
+      if (tokens[i] !== '{') return node;
+      i++;
+      while (i < tokens.length && tokens[i] !== '}') {
+        const field = tokens[i++];
+        if (field === 'ROUTE' || field === 'PROTO' || field === 'EXTERNPROTO') {
+          i--;
+          parseNode();
+        } else if (/^(field|exposedField|eventIn|eventOut)$/.test(field)) {
+          i += 2; // interface declaration in a Script: type and name, then a value for fields
+          if (field === 'field' || field === 'exposedField') parseValue();
+        } else {
+          node.fields[field] = parseValue();
+        }
+      }
+      i++;
+      return node;
+    }
+
+    const roots = [];
+    while (i < tokens.length) {
+      const before = i;
+      const node = parseNode();
+      if (node) roots.push(node);
+      if (i === before) i++;
+    }
+
+    // 4 × 4 matrices, column-major.
+    const identity = () => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    const multiply = (a, b) => {
+      const out = new Array(16);
+      for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+        out[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+      }
+      return out;
+    };
+    const translation = (v) => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, v[0], v[1], v[2], 1];
+    const scaling = (v) => [v[0], 0, 0, 0, 0, v[1], 0, 0, 0, 0, v[2], 0, 0, 0, 0, 1];
+    const rotation = (r) => {
+      const len = Math.hypot(r[0], r[1], r[2]) || 1;
+      const x = r[0] / len, y = r[1] / len, z = r[2] / len, c = Math.cos(r[3]), s = Math.sin(r[3]), k = 1 - c;
+      return [k * x * x + c, k * x * y + s * z, k * x * z - s * y, 0, k * x * y - s * z, k * y * y + c, k * y * z + s * x, 0,
+        k * x * z + s * y, k * y * z - s * x, k * z * z + c, 0, 0, 0, 0, 1];
+    };
+    const vec = (v, n, fallback) => (Array.isArray(v) && v.length >= n ? v : fallback);
+    const transformOf = (f) => {
+      const center = vec(f.center, 3, [0, 0, 0]);
+      const so = vec(f.scaleOrientation, 4, [0, 0, 1, 0]);
+      let m = translation(vec(f.translation, 3, [0, 0, 0]));
+      m = multiply(m, translation(center));
+      m = multiply(m, rotation(vec(f.rotation, 4, [0, 0, 1, 0])));
+      m = multiply(m, rotation(so));
+      m = multiply(m, scaling(vec(f.scale, 3, [1, 1, 1])));
+      m = multiply(m, rotation([so[0], so[1], so[2], -so[3]]));
+      return multiply(m, translation([-center[0], -center[1], -center[2]]));
+    };
+
+    // Shapes of the same colour are merged into one mesh.
+    const groups = new Map();
+    function addShape(f, m) {
+      const geometry = f.geometry;
+      if (!geometry || geometry.type !== 'IndexedFaceSet') return;
+      const g = geometry.fields;
+      const points = g.coord && g.coord.fields && g.coord.fields.point;
+      const index = Array.isArray(g.coordIndex) ? g.coordIndex : null;
+      if (!Array.isArray(points) || !index) return;
+      const material = f.appearance && f.appearance.fields && f.appearance.fields.material;
+      const color = material && material.fields ? vec(material.fields.diffuseColor, 3, [0.8, 0.8, 0.8]) : null;
+      const key = color ? color.map((c) => c.toFixed(3)).join(',') : 'none';
+      if (!groups.has(key)) groups.set(key, { color, pos: [], nrm: [] });
+      const out = groups.get(key);
+
+      // Points in model space.
+      const n = Math.floor(points.length / 3);
+      const p = new Float64Array(n * 3);
+      for (let k = 0; k < n; k++) {
+        const x = points[3 * k], y = points[3 * k + 1], z = points[3 * k + 2];
+        p[3 * k] = (m[0] * x + m[4] * y + m[8] * z + m[12]) * scale;
+        p[3 * k + 1] = (m[1] * x + m[5] * y + m[9] * z + m[13]) * scale;
+        p[3 * k + 2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) * scale;
+      }
+      const det = m[0] * (m[5] * m[10] - m[9] * m[6]) - m[4] * (m[1] * m[10] - m[9] * m[2]) + m[8] * (m[1] * m[6] - m[5] * m[2]);
+      const flip = (g.ccw === false) !== (det < 0);
+
+      // Triangles (polygons are fanned) with their face normals.
+      const tris = [];
+      let poly = [];
+      for (let k = 0; k <= index.length; k++) {
+        const v = k < index.length ? index[k] : -1;
+        if (v >= 0) {
+          if (v < n) poly.push(v);
+          continue;
+        }
+        for (let t = 1; t + 1 < poly.length; t++) tris.push(flip ? [poly[0], poly[t + 1], poly[t]] : [poly[0], poly[t], poly[t + 1]]);
+        poly = [];
+      }
+      const faceN = tris.map(([a, b, c]) => {
+        const ux = p[3 * b] - p[3 * a], uy = p[3 * b + 1] - p[3 * a + 1], uz = p[3 * b + 2] - p[3 * a + 2];
+        const vx = p[3 * c] - p[3 * a], vy = p[3 * c + 1] - p[3 * a + 1], vz = p[3 * c + 2] - p[3 * a + 2];
+        return [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx]; // length = twice the area
+      });
+
+      // Corner normals: smooth across edges flatter than creaseAngle, sharp elsewhere.
+      const crease = typeof g.creaseAngle === 'number' ? g.creaseAngle : 0;
+      const cosCrease = Math.cos(crease);
+      const unit = (v) => {
+        const l = Math.hypot(v[0], v[1], v[2]) || 1;
+        return [v[0] / l, v[1] / l, v[2] / l];
+      };
+      const faceU = faceN.map(unit);
+      let around = null;
+      if (crease > 0.01) {
+        around = Array.from({ length: n }, () => []);
+        tris.forEach((tri, t) => tri.forEach((v) => around[v].push(t)));
+      }
+      tris.forEach((tri, t) => {
+        for (const v of tri) {
+          out.pos.push(p[3 * v], p[3 * v + 1], p[3 * v + 2]);
+          let normal = faceU[t];
+          if (around) {
+            const sum = [0, 0, 0];
+            for (const o of around[v]) {
+              const fu = faceU[o];
+              if (fu[0] * normal[0] + fu[1] * normal[1] + fu[2] * normal[2] >= cosCrease - 1e-6) {
+                sum[0] += faceN[o][0];
+                sum[1] += faceN[o][1];
+                sum[2] += faceN[o][2];
+              }
+            }
+            normal = unit(sum);
+          }
+          out.nrm.push(normal[0], normal[1], normal[2]);
+        }
+      });
+    }
+
+    function walk(node, m, depth) {
+      if (!node || depth > 100) return;
+      if (Array.isArray(node)) {
+        node.forEach((child) => walk(child, m, depth));
+        return;
+      }
+      if (typeof node !== 'object' || !node.fields) return;
+      const f = node.fields;
+      if (node.type === 'Transform') walk(f.children, multiply(m, transformOf(f)), depth + 1);
+      else if (node.type === 'Shape') addShape(f, m);
+      else if (node.type === 'Switch') {
+        const choice = Array.isArray(f.choice) ? f.choice : [f.choice];
+        if (typeof f.whichChoice === 'number' && f.whichChoice >= 0) walk(choice[f.whichChoice], m, depth + 1);
+      } else if (node.type === 'LOD') walk(Array.isArray(f.level) ? f.level[0] : f.level, m, depth + 1);
+      else if (f.children) walk(f.children, m, depth + 1);
+    }
+    walk(roots, identity(), 0);
+
+    const meshes = [];
+    groups.forEach((group) => {
+      if (!group.pos.length) return;
+      const count = group.pos.length / 3;
+      const idx = new Uint32Array(count);
+      for (let k = 0; k < count; k++) idx[k] = k;
+      meshes.push({ name: '', color: group.color, pos: new Float32Array(group.pos), nrm: new Float32Array(group.nrm), idx, faces: [], edges: null, corners: null });
+    });
+    if (!meshes.length) throw new Error('No geometry found in this VRML file.');
+    return { success: true, meshes };
+  }
+
   // occt-import-js misses colours attached to faces through STYLED_ITEM in some exporters
   // (Fusion 360, Onshape). When it found none and the file uses one single colour, use that.
   function singleFileColor(result, buffer) {
@@ -689,6 +980,7 @@
     const cube = String(o.viewCube).toLowerCase();
     o.viewCube = /^(open|true|yes|on)$/.test(cube) ? 'open' : /^(off|false|no|0|none)$/.test(cube) ? 'off' : 'button';
     if (!UNITS[o.units]) o.units = 'mm';
+    if (!FILE_UNITS[o.fileUnits]) o.fileUnits = 'mm';
     if (!QUALITY[o.quality]) o.quality = 'normal';
     return o;
   }
@@ -706,6 +998,7 @@
   }
 
   function guessFormat(url) {
+    if (/\.(wrl|vrml)(\.gz)?$/i.test(fileName(url))) return 'vrml';
     const ext = (fileName(url).split('.').pop() || '').toLowerCase();
     if (ext === 'igs' || ext === 'iges') return 'iges';
     if (ext === 'brep' || ext === 'brp') return 'brep';
@@ -1325,16 +1618,23 @@
       const o = this.o;
       try {
         this._status('Loading…');
+        const format = o.format || guessFormat(o.src);
         const threeReady = loadThree();
-        const engineReady = getEngine();
+        // VRML is read by a small parser of its own; the other formats need the OpenCascade engine.
+        const engineReady = format === 'vrml' ? getVrmlEngine() : getEngine();
         const buffer = await this._fetchModel();
         if (this._disposed) return;
         this._status('Preparing geometry engine…');
         const engine = await engineReady;
         this._status('Processing geometry…');
-        const params = Object.assign({ linearUnit: UNITS[o.units], linearDeflectionType: 'bounding_box_ratio' }, QUALITY[o.quality]);
-        const result = await engine.parse(o.format || guessFormat(o.src), buffer, params, o.edges || o.measure);
-        if (!result.success) throw new Error('This file could not be read as ' + (o.format || guessFormat(o.src)).toUpperCase() + '.');
+        let result;
+        if (format === 'vrml') {
+          result = await engine.parse(buffer, (FILE_UNITS[o.fileUnits] || 1) / (FILE_UNITS[o.units] || 1));
+        } else {
+          const params = Object.assign({ linearUnit: UNITS[o.units], linearDeflectionType: 'bounding_box_ratio' }, QUALITY[o.quality]);
+          result = await engine.parse(format, buffer, params, o.edges || o.measure);
+        }
+        if (!result.success) throw new Error('This file could not be read as ' + format.toUpperCase() + '.');
         await threeReady;
         if (this._disposed) return;
         this._setupScene();

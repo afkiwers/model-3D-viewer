@@ -31,7 +31,8 @@ no framework. Point it at a `.step` / `.stp` file on your server and visitors ge
 
 The STEP file is read in the browser by [occt-import-js](https://github.com/kovacsv/occt-import-js)
 (OpenCascade compiled to WebAssembly) and drawn with [three.js](https://threejs.org). Both load from
-the jsDelivr CDN by default. IGES (`.igs`, `.iges`) and BREP files work too.
+the jsDelivr CDN by default. IGES (`.igs`, `.iges`) and BREP files work too, and so does VRML 2.0
+(`.wrl`, also gzip-compressed) as exported by KiCad and other ECAD and CAD tools; see [VRML files](#vrml-files).
 
 ## Quick start
 
@@ -105,7 +106,8 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `background` | light grey gradient | Any CSS background, for example `#fff`, `transparent` or a gradient. |
 | `quality` | `normal` | Tessellation detail: `low`, `normal` or `high`. Use `high` for small curved details. |
 | `lazy` | `true` | Wait until the viewer is scrolled into view before loading. |
-| `format` | from extension | `step`, `iges` or `brep`, if the URL doesn't end in a known extension. |
+| `format` | from extension | `step`, `iges`, `brep` or `vrml`, if the URL doesn't end in a known extension. |
+| `fileUnits` | `mm` | Units used inside VRML files, which don't say: `mm`, `cm`, `m`, `in` or `0.1in` (KiCad library parts). |
 
 Example with several options:
 
@@ -242,6 +244,23 @@ el.addEventListener('stepviewer:markerschange', (e) => save(e.detail.markers)); 
 
 To stop the automatic set-up, add `data-auto-init="false"` to the script tag and call
 `StepViewer.init()` or `StepViewer.create()` yourself.
+
+## VRML files
+
+VRML 2.0 (VRML97) files, `.wrl` or `.wrl.gz`, open like STEP files and work with markers, measuring and
+everything else. They don't need the OpenCascade engine, so they load quickly.
+
+```html
+<div class="step-viewer" data-src="/models/board.wrl" data-file-units="0.1in"></div>
+```
+
+A few differences from STEP:
+
+* VRML is a mesh format, so edges are found from the angles between faces rather than from the CAD model.
+* VRML files don't say which unit they use. Set `fileUnits` so sizes and measurements come out right: KiCad
+  board exports use the unit chosen when exporting, KiCad's library parts use 0.1 inch (`0.1in`).
+* Shapes made with `IndexedFaceSet` are shown, with their material colour; primitives such as `Box`, textures
+  and VRML 1.0 files are not supported.
 
 ## Marker themes
 

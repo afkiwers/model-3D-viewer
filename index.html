@@ -140,7 +140,7 @@
 &lt;script src="step-viewer.js"&gt;&lt;/script&gt;</pre>
 
   <h2 id="your-model">Try your own model</h2>
-  <p>Open a STEP, IGES or BREP file from your computer to see how it looks, place markers on it and get the code for
+  <p>Open a STEP, IGES, BREP or VRML file from your computer to see how it looks, place markers on it and get the code for
     your own site. Click the pin with a plus in the toolbar, then click the model where a marker should go, and type its
     title and text straight into the card.</p>
 
@@ -155,7 +155,7 @@
         Load markers file
       </button>
     </div>
-    <input type="file" id="file-input" accept=".step,.stp,.iges,.igs,.brep,.brp" hidden>
+    <input type="file" id="file-input" accept=".step,.stp,.iges,.igs,.brep,.brp,.wrl,.vrml,.gz" hidden>
     <input type="file" id="markers-input" accept=".json,application/json" hidden>
     <p class="privacy-note">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
@@ -197,6 +197,15 @@
       <label><input type="checkbox" id="opt-download" checked> Download button</label>
       <label><input type="checkbox" id="opt-measure" checked> Ruler</label>
       <label title="The page behind the viewer shows through; the checkerboard here stands for your page"><input type="checkbox" id="opt-transparent"> Transparent background</label>
+      <label id="opt-units-wrap" hidden title="VRML files do not say which unit they use">Units in file
+        <select id="opt-units">
+          <option value="mm">Millimetres</option>
+          <option value="0.1in">0.1 inch (KiCad library parts)</option>
+          <option value="in">Inches</option>
+          <option value="cm">Centimetres</option>
+          <option value="m">Metres</option>
+        </select>
+      </label>
       <button type="button" id="use-view">Use current view as starting view</button>
     </div>
 
@@ -308,6 +317,7 @@
       if (!document.getElementById('opt-download').checked) lines.push('     data-download="false"');
       if (!document.getElementById('opt-measure').checked) lines.push('     data-measure="false"');
       if (document.getElementById('opt-transparent').checked) lines.push('     data-transparent="true"');
+      if (isVrml() && state.fileUnits !== 'mm') lines.push('     data-file-units="' + state.fileUnits + '"');
       lines.push('     data-height="500"></div>', '', '<script src="step-viewer.js"></' + 'script>');
       document.getElementById('config-html').textContent = lines.join('\n');
       document.getElementById('config-markers').textContent = markers.length
@@ -319,8 +329,8 @@
 
     function open(file) {
       errorBox.textContent = '';
-      if (!/\.(step|stp|iges|igs|brep|brp)$/i.test(file.name)) {
-        errorBox.textContent = file.name + ' is not a STEP, IGES or BREP file.';
+      if (!/\.(step|stp|iges|igs|brep|brp|wrl|vrml|wrl\.gz)$/i.test(file.name)) {
+        errorBox.textContent = file.name + ' is not a STEP, IGES, BREP or VRML file.';
         return;
       }
       const old = StepViewer.get(work);
@@ -329,6 +339,10 @@
       state.view = null;
       state.rotation = [0, 0, 0];
       state.markersFile = null;
+      state.file = file;
+      state.fileUnits = 'mm';
+      document.getElementById('opt-units').value = 'mm';
+      document.getElementById('opt-units-wrap').hidden = !isVrml();
       loadStatus.textContent = '';
       document.getElementById('orientation-status').textContent = '';
       const viewer = StepViewer.create(work, { src: file, markers: [], editor: true, view: 'iso', zoom: 1, lazy: false, viewCube: 'open', theme: currentTheme() });
@@ -336,6 +350,28 @@
       render();
       work.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+
+    const isVrml = () => /\.(wrl|vrml)(\.gz)?$/i.test(state.modelName);
+
+    // VRML files have no units. Changing the unit reloads the model at the new size and scales the
+    // markers placed so far, so nothing is lost.
+    const MM_PER_UNIT = { mm: 1, cm: 10, m: 1000, in: 25.4, '0.1in': 2.54 };
+    document.getElementById('opt-units').addEventListener('change', (e) => {
+      const old = StepViewer.get(work);
+      if (!old || !state.file) return;
+      const ratio = MM_PER_UNIT[e.target.value] / MM_PER_UNIT[state.fileUnits];
+      const scale = (v) => v.map((x) => Math.round(x * ratio * 1000) / 1000);
+      const markers = old.getMarkers().map((m) => Object.assign({}, m, {
+        position: scale(m.position),
+        camera: m.camera && Object.assign({}, m.camera, { position: scale(m.camera.position), target: scale(m.camera.target) }),
+      }));
+      old.dispose();
+      state.fileUnits = e.target.value;
+      const viewer = StepViewer.create(work, { src: state.file, markers, fileUnits: state.fileUnits, rotation: state.rotation, editor: true,
+        view: 'iso', zoom: 1, lazy: false, viewCube: 'open', theme: currentTheme() });
+      viewer.ready.then(render, () => {});
+      render();
+    });
 
     // An existing markers file is read in the browser too, and placed on the model once it has loaded.
     const loadStatus = document.getElementById('load-status');
@@ -400,7 +436,7 @@
       work.classList.remove('drag-over');
       // A model, a markers file, or both at once.
       const files = Array.from(e.dataTransfer.files);
-      const model = files.find((f) => /\.(step|stp|iges|igs|brep|brp)$/i.test(f.name));
+      const model = files.find((f) => /\.(step|stp|iges|igs|brep|brp|wrl|vrml|wrl\.gz)$/i.test(f.name));
       const markers = files.find((f) => /\.json$/i.test(f.name));
       if (model) open(model);
       if (markers) openMarkers(markers);
