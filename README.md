@@ -178,7 +178,8 @@ it is never uploaded and never leaves your computer.
 
 1. Add `data-editor="true"` to the viewer (on a private page, or temporarily).
 2. Click the **Add marker** button (the pin with a plus), then click the model where the marker goes.
-3. Type the title and description straight into the card.
+3. Type the title and description straight into the card. Not quite the right spot? Drag the marker across
+   the model to move it.
 4. Turn the model to the view you want for that marker and press **Use current view**.
 5. Press **Copy JSON** and paste it into your markers file. Remove `data-editor` when you're done.
 

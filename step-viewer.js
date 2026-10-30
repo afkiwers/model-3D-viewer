@@ -200,6 +200,8 @@
   transition:transform .25s cubic-bezier(.3,1.6,.5,1),opacity .3s,background-color .2s;animation:sv-pop .55s cubic-bezier(.3,1.6,.5,1) backwards;animation-delay:calc(var(--i,0) * 70ms + .2s)}
 .sv-marker:hover,.sv-marker:focus-visible{transform:scale(1.18);background:var(--sv-accent);outline:none}
 .sv-marker.sv-occluded{opacity:.7;border-style:dashed;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.sv-editing .sv-marker{cursor:grab;touch-action:none}
+.sv-marker.sv-marker-dragging{cursor:grabbing;transform:scale(1.3);transition:none;opacity:1;border-style:solid}
 .sv-marker.sv-active{background:var(--sv-accent);transform:scale(1.22);opacity:1;z-index:1}
 .sv-marker.sv-active::before,.sv-marker.sv-active::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--sv-accent);animation:sv-ping 2s cubic-bezier(0,.55,.45,1) infinite;pointer-events:none}
 .sv-marker.sv-active::after{animation-delay:1s}
@@ -258,7 +260,7 @@
 .sv-nav svg{width:16px;height:16px}
 .sv-nav .sv-nav-title{padding:0 12px;display:block;line-height:28px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .sv-nav .sv-nav-title span{opacity:.6;margin-right:8px;font-variant-numeric:tabular-nums}
-.sv-editor{position:absolute;top:10px;left:10px;z-index:3;width:min(330px,calc(100% - 20px));box-sizing:border-box;padding:10px;border-radius:10px;background:var(--sv-ui-bg);
+.sv-editor{position:absolute;top:10px;left:10px;z-index:1;width:min(330px,calc(100% - 20px));box-sizing:border-box;padding:10px;border-radius:10px;background:var(--sv-ui-bg);
   border:1px solid var(--sv-ui-border);box-shadow:0 4px 14px rgba(0,0,0,.12);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);-webkit-user-select:text;user-select:text}
 .sv-editor[hidden]{display:none}
 .sv-editor-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-weight:600}
@@ -1161,13 +1163,16 @@
         b.type = 'button';
         b.style.setProperty('--i', i);
         b.setAttribute('aria-label', 'Marker ' + (i + 1) + (data.title ? ': ' + data.title : ''));
+        const mk = { data, pos: new THREE.Vector3().fromArray(data.position), el: b, occluded: false, dragged: false };
         b.addEventListener('click', (e) => {
           e.stopPropagation();
+          if (mk.dragged) return; // the end of a drag, not a click
           if (this.activeMarker === i) this.closeMarker();
           else this.openMarker(i);
         });
+        if (this.o.editor) this._makeDraggable(mk);
         this.markerLayer.appendChild(b);
-        return { data, pos: new THREE.Vector3().fromArray(data.position), el: b, occluded: false };
+        return mk;
       });
       this._occlusionAt = 0;
       if (this.btn.markers) this.btn.markers.hidden = !this.markers.length;
@@ -1309,7 +1314,7 @@
       if (this.renderer) this.renderer.dispose();
       this._ui.forEach((node) => node.remove());
       if (this.canvas) this.canvas.remove();
-      this.el.classList.remove('sv-root', 'sv-measuring', 'sv-expanded', 'sv-markers-off', 'sv-theme-' + this.o.theme);
+      this.el.classList.remove('sv-root', 'sv-editing', 'sv-measuring', 'sv-expanded', 'sv-markers-off', 'sv-theme-' + this.o.theme);
       instances.delete(this.el);
     }
 
@@ -1419,6 +1424,7 @@
       const root = this.el;
       const o = this.o;
       root.classList.add('sv-root', 'sv-theme-' + o.theme);
+      if (o.editor) root.classList.add('sv-editing');
       if (!root.hasAttribute('tabindex')) root.tabIndex = 0;
       if (o.width != null) root.style.width = cssSize(o.width);
       if (o.height != null) root.style.height = cssSize(o.height);
@@ -1493,7 +1499,7 @@
       this.bottom.append(this.info, this.nav, this.hintEl);
 
       this.editor = el('div', 'sv-editor', '<div class="sv-editor-head">Markers <button type="button">Copy JSON</button></div>'
-        + '<p>Click the model to add a marker. Edit the title and text in its card, then copy this into your markers file.</p><textarea readonly spellcheck="false"></textarea>');
+        + '<p>Click the model to add a marker, drag a marker to move it. Edit the title and text in its card, then copy this into your markers file.</p><textarea readonly spellcheck="false"></textarea>');
       this.editor.hidden = true;
       this.editor.querySelector('button').addEventListener('click', (e) => {
         const ta = this.editor.querySelector('textarea');
@@ -2049,6 +2055,56 @@
       this.openMarker(list.length - 1);
     }
 
+    // In the editor, markers can be dragged across the model's surface to a better spot.
+    _makeDraggable(mk) {
+      const b = mk.el;
+      let drag = null;
+      b.addEventListener('pointerdown', (e) => {
+        if (e.button > 0 || !this.model) return;
+        e.stopPropagation();
+        b.setPointerCapture(e.pointerId);
+        drag = { x: e.clientX, y: e.clientY, moved: false, from: mk.pos.clone() };
+      });
+      b.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 4) return;
+        drag.moved = true;
+        b.classList.add('sv-marker-dragging');
+        const hit = this._surfaceAt(e.clientX, e.clientY);
+        if (!hit) return; // off the model: the marker waits at its last spot
+        mk.pos.copy(this.model.worldToLocal(hit.point.clone()));
+        mk.data.position = mk.pos.toArray();
+        if (this.cardMeta && this.markers[this.activeMarker] === mk) this.cardMeta.textContent = this._markerMeta(mk);
+        this.requestRender();
+      });
+      const end = () => {
+        if (!drag) return;
+        if (drag.moved) {
+          // A saved view moves along with the marker, so it still frames it.
+          const cam = mk.data.camera;
+          if (cam && Array.isArray(cam.position) && Array.isArray(cam.target)) {
+            const shift = mk.pos.clone().sub(drag.from);
+            cam.position = new THREE.Vector3().fromArray(cam.position).add(shift).toArray();
+            cam.target = new THREE.Vector3().fromArray(cam.target).add(shift).toArray();
+          }
+          mk.dragged = true;
+          setTimeout(() => { mk.dragged = false; }); // after the click that ends the drag
+          b.classList.remove('sv-marker-dragging');
+          this._occlusionAt = 0;
+          this._markersChanged();
+          this.requestRender();
+        }
+        drag = null;
+      };
+      b.addEventListener('pointerup', end);
+      b.addEventListener('pointercancel', end);
+    }
+
+    _markerMeta(mk) {
+      const f = (v) => this._fmt(v);
+      return 'MKR-' + String(this.markers.indexOf(mk) + 1).padStart(2, '0') + ' · X ' + f(mk.pos.x) + ' Y ' + f(mk.pos.y) + ' Z ' + f(mk.pos.z) + ' ' + this.o.units;
+    }
+
     _currentCamera() {
       const up = this.camera.up.clone().applyQuaternion(this.model.quaternion.clone().invert()).normalize();
       return {
@@ -2114,8 +2170,8 @@
       // Reference and coordinates; only some themes show this line.
       const meta = el('div', 'sv-card-meta sv-reveal');
       meta.style.setProperty('--d', 0.5);
-      const f = (v) => this._fmt(v);
-      meta.textContent = 'MKR-' + num.dataset.ref + ' · X ' + f(mk.pos.x) + ' Y ' + f(mk.pos.y) + ' Z ' + f(mk.pos.z) + ' ' + this.o.units;
+      meta.textContent = this._markerMeta(mk);
+      this.cardMeta = meta;
       const text = el('div', 'sv-card-text sv-reveal');
       text.style.setProperty('--d', 1);
       // Descriptions are written by the site owner, so simple HTML (links, images, lists) is allowed.
