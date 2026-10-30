@@ -96,7 +96,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `editor` | `false` | Marker editor: place markers by clicking and copy their JSON. |
 | `markerSize` | `30` | Marker diameter in pixels. |
 | `pivot` | `rotate` | Crosshair at the centre of rotation: `rotate` (while turning the model), `always` or `off`. |
-| `theme` | `default` | Look of the markers and their cards: `default`, `digital`, `military` or `agricultural`. See [Marker themes](#marker-themes). |
+| `theme` | `default` | Look of the markers and their cards: `default`, `digital`, `military`, `agricultural`, `fpv`, `avionics`, `rover`, `thermal`, `blueprint`, `carbon` or `datasheet`. See [Marker themes](#marker-themes). |
 | `views` | `true` | Show the standard views menu. |
 | `fullscreen` | `true` | Show the fullscreen button. |
 | `info` | `true` | Show the file name and overall size (X × Y × Z). |
@@ -215,7 +215,7 @@ viewer.clearMeasurements();
 viewer.openMarker(0);            // 0-based
 viewer.nextMarker(1);            // or -1 for the previous one
 viewer.closeMarker();
-viewer.setTheme('military');     // default | digital | military | agricultural
+viewer.setTheme('military');     // or any other theme name, see Marker themes
 viewer.setMarkers([...]);
 viewer.getMarkers();             // current markers as plain data
 viewer.download();               // does nothing while downloads are disabled
@@ -282,6 +282,18 @@ Pick a look for the markers, their cards and the marker bar with `data-theme`, t
 | **`military`** | **`agricultural`** |
 | ![Military theme](docs/themes/military.png) | ![Agricultural theme](docs/themes/agricultural.png) |
 | Olive and tan, stencil type, hazard stripe and grid reference; opens like a tactical display. | Cream paper, serif type, leaf-shaped badges; sprouts up from below. |
+| **`fpv`** (quadcopters) | **`avionics`** (fixed-wing) |
+| ![FPV theme](docs/themes/fpv.png) | ![Avionics theme](docs/themes/avionics.png) |
+| FPV goggle on-screen display: outlined white type on analogue video, blinking REC; glitches in like a video signal. | Head-up display in HUD green with a moving heading tape and waypoint badges; boots up from a single line. |
+| **`rover`** (ground vehicles) | **`thermal`** |
+| ![Rover theme](docs/themes/rover.png) | ![Thermal theme](docs/themes/thermal.png) |
+| Safety yellow on diamond plate, rivets, hex-nut badges and a running tank tread; drives in from the side. | Thermal camera ironbow palette with glowing hot-spot markers and a temperature scale; blooms in like heat. |
+| **`blueprint`** | **`carbon`** |
+| ![Blueprint theme](docs/themes/blueprint.png) | ![Carbon theme](docs/themes/carbon.png) |
+| Engineering drawing: grid paper, double frame, balloon callouts and a drawing reference; draws itself in. | Racing drone carbon fibre with red accents and italic racing type; slides in at speed. |
+| **`datasheet`** | |
+| ![Datasheet theme](docs/themes/datasheet.png) | |
+| Product datasheet: black and amber, spaced monospace labels, an amber rule and an "F.01" style index; wipes in like a printed page. Set `--sv-datasheet-font` to use your brand's heading font. | |
 
 Any other name adds the class `sv-theme-<name>` to the viewer, so you can write your own theme in CSS,
 starting from the `.sv-theme-digital` rules in `step-viewer.js`.

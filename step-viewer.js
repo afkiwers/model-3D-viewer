@@ -73,7 +73,7 @@
     pivot: 'rotate',       // centre of rotation indicator: 'rotate' (while turning), 'always' or 'off'
     markers: null,         // hotspots: URL of a JSON file, or an array (see README)
     editor: false,         // marker editor: click the model to place markers and copy their JSON
-    theme: 'default',      // look of markers and cards: default | digital | military | agricultural
+    theme: 'default',      // markers and cards: default | digital | military | agricultural | fpv | avionics | rover | thermal | blueprint | carbon | datasheet
   };
   // Site-wide defaults, e.g. window.StepViewerConfig = { defaults: { download: false } }
   if (config.defaults) Object.assign(DEFAULTS, config.defaults);
@@ -395,6 +395,272 @@
 .sv-theme-agricultural .sv-overlay .sv-leader-end{fill:#d9a441}
 @keyframes sv-ag-in{0%{opacity:0;transform:translateY(34px) scale(.3) rotate(5deg)}55%{opacity:1;transform:translateY(-6px) scale(1.04) rotate(-1deg)}100%{opacity:1;transform:none}}
 @keyframes sv-ag-sun{to{transform:none;opacity:1}}
+/* ---- Theme: fpv (quadcopter goggles: on-screen display over analogue video) ---- */
+.sv-theme-fpv{--sv-accent:#ff3b30}
+.sv-theme-fpv .sv-card{border-radius:4px;padding:1px;background:rgba(255,255,255,.45);box-shadow:0 10px 30px -10px rgba(0,0,0,.6);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;animation:sv-fpv-in .6s steps(1,end) both}
+.sv-theme-fpv .sv-card.sv-out{animation:sv-fpv-out .2s steps(2) both}
+.sv-theme-fpv .sv-card-body{border-radius:3px;padding:18px 18px 14px;color:#fff;
+  text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px),
+    repeating-conic-gradient(rgba(255,255,255,.035) 0 25%,transparent 0 50%) 0 0/3px 3px,
+    linear-gradient(160deg,rgba(40,48,56,.72),rgba(8,10,12,.78));
+  -webkit-backdrop-filter:blur(3px) saturate(.6);backdrop-filter:blur(3px) saturate(.6)}
+.sv-theme-fpv .sv-card-body::before{content:"\\25CF  REC";inset:auto;top:12px;right:42px;width:auto;height:auto;transform:none;background:none;
+  color:#ff3b30;font:700 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;animation:sv-blink 1.2s steps(1) infinite}
+.sv-theme-fpv .sv-card-body::after{content:"";position:absolute;inset:6px;pointer-events:none;opacity:.85;
+  background:linear-gradient(#fff,#fff) 0 0/12px 2px,linear-gradient(#fff,#fff) 0 0/2px 12px,
+    linear-gradient(#fff,#fff) 100% 0/12px 2px,linear-gradient(#fff,#fff) 100% 0/2px 12px,
+    linear-gradient(#fff,#fff) 0 100%/12px 2px,linear-gradient(#fff,#fff) 0 100%/2px 12px,
+    linear-gradient(#fff,#fff) 100% 100%/12px 2px,linear-gradient(#fff,#fff) 100% 100%/2px 12px;background-repeat:no-repeat;
+  filter:drop-shadow(1px 1px 0 #000)}
+.sv-theme-fpv .sv-card-head{padding-right:96px}
+.sv-theme-fpv .sv-card-num{border-radius:3px;width:34px;height:24px;font-size:0;background:rgba(0,0,0,.35);box-shadow:0 0 0 2px #fff,0 0 0 3px #000}
+.sv-theme-fpv .sv-card-num::after{content:attr(data-ref);font:700 13px/1 ui-monospace,Menlo,Consolas,monospace;color:#fff}
+.sv-theme-fpv .sv-card h3{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#fff}
+.sv-theme-fpv .sv-card-meta{display:block;margin-top:8px;font-size:11px;letter-spacing:.04em;color:#e5e7eb}
+.sv-theme-fpv .sv-card-meta::before{content:"\\2316  "}
+.sv-theme-fpv .sv-card-text{color:#fff;font-size:13px}
+.sv-theme-fpv .sv-card-text a{color:#7dd3fc}
+.sv-theme-fpv .sv-card-close{color:#fff;border-radius:3px}
+.sv-theme-fpv .sv-card-close:hover{background:#ff3b30}
+.sv-theme-fpv .sv-card-foot{border-top:1px dashed rgba(255,255,255,.45);color:#d1d5db;text-transform:uppercase;font-size:11px;letter-spacing:.06em}
+.sv-theme-fpv .sv-card-foot button{color:#fff;border-radius:3px}
+.sv-theme-fpv .sv-card-foot button:hover{background:#ff3b30}
+.sv-theme-fpv .sv-marker{background:rgba(0,0,0,.45);border:2px solid #fff;color:#fff;font-family:ui-monospace,Menlo,Consolas,monospace;
+  text-shadow:1px 1px 0 #000;box-shadow:0 0 0 1px #000,0 2px 8px rgba(0,0,0,.5)}
+.sv-theme-fpv .sv-marker:hover,.sv-theme-fpv .sv-marker:focus-visible,.sv-theme-fpv .sv-marker.sv-active{background:#ff3b30}
+.sv-theme-fpv .sv-nav{border-radius:4px;background:rgba(10,12,14,.65);border:1px solid rgba(255,255,255,.45);font-family:ui-monospace,Menlo,Consolas,monospace;
+  text-shadow:1px 1px 0 #000;text-transform:uppercase;letter-spacing:.05em;font-size:12px}
+.sv-theme-fpv .sv-overlay .sv-leader{stroke:#fff;filter:drop-shadow(1px 1px 0 #000)}
+.sv-theme-fpv .sv-overlay .sv-leader-end{fill:#fff}
+@keyframes sv-fpv-in{0%{opacity:0}8%{opacity:1;transform:translateY(-8px);filter:contrast(3) brightness(1.8) grayscale(1)}
+  16%{opacity:.2;transform:translateX(6px)}24%{opacity:1;transform:none;filter:contrast(2) grayscale(.6)}34%{opacity:.5;transform:skewX(8deg)}
+  44%{opacity:1;transform:none;filter:none}58%{opacity:.75}66%{opacity:1}100%{opacity:1;transform:none;filter:none}}
+@keyframes sv-fpv-out{50%{opacity:.4;transform:translateX(-6px)}to{opacity:0}}
+/* ---- Theme: avionics (fixed-wing head-up display) ---- */
+.sv-theme-avionics{--sv-accent:#3dff7a}
+.sv-theme-avionics .sv-btn[aria-pressed="true"],.sv-theme-avionics .sv-btn[aria-expanded="true"]{color:#00200b}
+.sv-theme-avionics .sv-card{border-radius:0;padding:0;background:none;box-shadow:none;transform-origin:50% 50%!important;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;filter:drop-shadow(0 0 6px rgba(61,255,122,.35));animation:sv-hud-in .7s cubic-bezier(.5,0,.2,1) both}
+.sv-theme-avionics .sv-card.sv-out{animation:sv-hud-out .25s ease-in both}
+.sv-theme-avionics .sv-card-body{border-radius:0;padding:34px 20px 16px;color:#c6ffd8;text-shadow:0 0 6px rgba(61,255,122,.55);
+  background:linear-gradient(180deg,rgba(0,24,10,.7),rgba(0,24,10,.5));-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.sv-theme-avionics .sv-card-body::before{inset:0 30px auto 30px;top:6px;height:16px;transform:none;opacity:.9;
+  background:repeating-linear-gradient(90deg,#3dff7a 0 1.5px,transparent 1.5px 60px) 0 100%/60px 16px repeat-x,
+    repeating-linear-gradient(90deg,#3dff7a 0 1.5px,transparent 1.5px 12px) 0 100%/12px 7px repeat-x;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);mask:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);
+  animation:sv-hud-tape 7s linear infinite}
+.sv-theme-avionics .sv-card-body::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(#3dff7a,#3dff7a) 0 0/18px 2px,linear-gradient(#3dff7a,#3dff7a) 0 0/2px 18px,
+    linear-gradient(#3dff7a,#3dff7a) 100% 0/18px 2px,linear-gradient(#3dff7a,#3dff7a) 100% 0/2px 18px,
+    linear-gradient(#3dff7a,#3dff7a) 0 100%/18px 2px,linear-gradient(#3dff7a,#3dff7a) 0 100%/2px 18px,
+    linear-gradient(#3dff7a,#3dff7a) 100% 100%/18px 2px,linear-gradient(#3dff7a,#3dff7a) 100% 100%/2px 18px,
+    linear-gradient(#3dff7a,#3dff7a) 50% 22px/2px 8px;background-repeat:no-repeat}
+.sv-theme-avionics .sv-card-num{border-radius:1px;width:22px;height:22px;margin:0 4px;font-size:0;background:transparent;transform:rotate(45deg);
+  box-shadow:0 0 0 2px #3dff7a,0 0 10px rgba(61,255,122,.6)}
+.sv-theme-avionics .sv-card-num::after{content:attr(data-ref);transform:rotate(-45deg);font:700 11px/1 ui-monospace,Menlo,Consolas,monospace;color:#3dff7a}
+.sv-theme-avionics .sv-card h3{color:#3dff7a;text-transform:uppercase;letter-spacing:.12em;font-size:15px}
+.sv-theme-avionics .sv-card-meta{display:block;margin-top:8px;font-size:11px;letter-spacing:.05em;color:#7dffa6}
+.sv-theme-avionics .sv-card-meta::before{content:"WPT \\25B8  "}
+.sv-theme-avionics .sv-card-text{color:#c6ffd8;font-size:13px}
+.sv-theme-avionics .sv-card-text a{color:#a7f3ff}
+.sv-theme-avionics .sv-card-close{top:30px;color:#3dff7a;border-radius:0}
+.sv-theme-avionics .sv-card-close:hover{background:#3dff7a;color:#00200b;text-shadow:none}
+.sv-theme-avionics .sv-card-foot{border-top:1px solid rgba(61,255,122,.4);color:#7dffa6;text-transform:uppercase;font-size:11px;letter-spacing:.08em}
+.sv-theme-avionics .sv-card-foot button{color:#3dff7a;border-radius:0}
+.sv-theme-avionics .sv-card-foot button:hover{background:#3dff7a;color:#00200b;text-shadow:none}
+.sv-theme-avionics .sv-reveal{animation-delay:calc(.4s + var(--d,0) * 90ms)}
+.sv-theme-avionics .sv-marker{border-radius:2px;background:rgba(0,24,10,.6);border:2px solid #3dff7a;color:#3dff7a;font-family:ui-monospace,Menlo,Consolas,monospace;
+  box-shadow:0 0 10px rgba(61,255,122,.6);text-shadow:0 0 4px rgba(61,255,122,.8)}
+.sv-theme-avionics .sv-marker:hover,.sv-theme-avionics .sv-marker:focus-visible,.sv-theme-avionics .sv-marker.sv-active{background:#3dff7a;color:#00200b;text-shadow:none}
+.sv-theme-avionics .sv-marker.sv-active::before,.sv-theme-avionics .sv-marker.sv-active::after{border-radius:2px}
+.sv-theme-avionics .sv-nav{border-radius:0;background:rgba(0,24,10,.75);color:#3dff7a;border:1px solid rgba(61,255,122,.6);font-family:ui-monospace,Menlo,Consolas,monospace;
+  text-transform:uppercase;letter-spacing:.08em;font-size:12px;text-shadow:0 0 6px rgba(61,255,122,.6)}
+.sv-theme-avionics .sv-nav button{border-radius:0}
+.sv-theme-avionics .sv-overlay .sv-leader{filter:drop-shadow(0 0 4px #3dff7a)}
+@keyframes sv-hud-in{0%{opacity:0;transform:scale(.04,.02)}30%{opacity:1;transform:scale(1,.02)}38%{opacity:.4}44%{opacity:1;transform:scale(1,.02)}100%{opacity:1;transform:none}}
+@keyframes sv-hud-out{to{opacity:0;transform:scale(1,.02)}}
+@keyframes sv-hud-tape{to{background-position:-60px 100%,-60px 100%}}
+/* ---- Theme: rover (unmanned ground vehicle) ---- */
+.sv-theme-rover{--sv-accent:#ffc400}
+.sv-theme-rover .sv-btn[aria-pressed="true"],.sv-theme-rover .sv-btn[aria-expanded="true"]{color:#1a1a1a}
+.sv-theme-rover .sv-card{border-radius:12px 12px 6px 6px;padding:2.5px;background:#ffc400;
+  box-shadow:0 18px 36px -14px rgba(0,0,0,.6),0 0 0 1px #1a1a1a;animation:sv-ugv-in .75s cubic-bezier(.2,.9,.3,1) both}
+.sv-theme-rover .sv-card.sv-out{animation:sv-ugv-out .25s ease-in both}
+.sv-theme-rover .sv-card-body{border-radius:10px 10px 4px 4px;padding:20px 20px 34px;color:#e5e7eb;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 3px,transparent 3px 14px),
+    repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 3px,transparent 3px 14px),linear-gradient(180deg,#30343a,#1d2024);
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-rover .sv-card-body::before{inset:0;transform:none;animation:none;
+  background:radial-gradient(circle at 9px 9px,#a3a9b1 2.5px,#3a3f46 3px,transparent 3.5px),radial-gradient(circle at calc(100% - 9px) 9px,#a3a9b1 2.5px,#3a3f46 3px,transparent 3.5px)}
+.sv-theme-rover .sv-card-body::after{content:"";position:absolute;left:0;right:0;bottom:0;height:16px;pointer-events:none;border-top:2px solid #111;
+  background:repeating-linear-gradient(90deg,#4b5057 0 9px,#1f2226 9px 12px) 0 0/12px 100% repeat-x,#2a2d31;animation:sv-ugv-tread .9s linear infinite}
+.sv-theme-rover .sv-card-num{border-radius:0;width:32px;height:28px;background:#ffc400;color:#1a1a1a;box-shadow:none;
+  clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.sv-theme-rover .sv-card h3{font-family:"Arial Narrow","Roboto Condensed","Helvetica Neue",Arial,sans-serif;font-weight:800;font-size:18px;
+  text-transform:uppercase;letter-spacing:.04em;color:#ffc400}
+.sv-theme-rover .sv-card-meta{display:block;margin-top:8px;font:600 11px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#ffd84d;opacity:.85}
+.sv-theme-rover .sv-card-meta::before{content:"UNIT \\25B8  "}
+.sv-theme-rover .sv-card-text{color:#e5e7eb}
+.sv-theme-rover .sv-card-text a{color:#ffc400}
+.sv-theme-rover .sv-card-close{color:#ffc400}
+.sv-theme-rover .sv-card-close:hover{background:#ffc400;color:#1a1a1a}
+.sv-theme-rover .sv-card-foot{border-top:2px solid #3a3f46;color:#9ca3af;text-transform:uppercase;font-size:11px;letter-spacing:.08em}
+.sv-theme-rover .sv-card-foot button{color:#ffc400;font-weight:700}
+.sv-theme-rover .sv-card-foot button:hover{background:#ffc400;color:#1a1a1a}
+.sv-theme-rover .sv-marker{border-radius:7px;background:#ffc400;border:2px solid #1a1a1a;color:#1a1a1a;box-shadow:0 0 0 2px #ffc400,0 4px 10px rgba(0,0,0,.45)}
+.sv-theme-rover .sv-marker:hover,.sv-theme-rover .sv-marker:focus-visible,.sv-theme-rover .sv-marker.sv-active{background:#1a1a1a;color:#ffc400;border-color:#ffc400}
+.sv-theme-rover .sv-marker.sv-active::before,.sv-theme-rover .sv-marker.sv-active::after{border-radius:7px}
+.sv-theme-rover .sv-nav{border-radius:8px;background:#1d2024;color:#ffc400;border:2px solid #ffc400;text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:700}
+.sv-theme-rover .sv-nav button:hover{background:rgba(255,196,0,.2)}
+.sv-theme-rover .sv-overlay .sv-leader{filter:none;stroke-width:2.5}
+@keyframes sv-ugv-in{0%{opacity:0;transform:translateX(-70px)}55%{opacity:1;transform:translateX(8px)}70%{transform:translateX(-3px) rotate(-1.2deg)}85%{transform:translateX(1px) rotate(.4deg)}100%{opacity:1;transform:none}}
+@keyframes sv-ugv-out{to{opacity:0;transform:translateX(40px)}}
+@keyframes sv-ugv-tread{to{background-position:12px 0,0 0}}
+/* ---- Theme: thermal (infrared camera, ironbow palette) ---- */
+.sv-theme-thermal{--sv-accent:#ff7a00}
+.sv-theme-thermal .sv-btn[aria-pressed="true"],.sv-theme-thermal .sv-btn[aria-expanded="true"]{color:#1a0010}
+.sv-theme-thermal .sv-card{border-radius:12px;padding:2px;background:linear-gradient(90deg,#1b0036,#5b0a8f,#b3006b,#ff3d00,#ff9f00,#ffe8a0,#ff9f00,#ff3d00,#b3006b,#5b0a8f,#1b0036) 0 0/300% 100%;
+  box-shadow:0 20px 50px -18px rgba(90,0,60,.7),0 0 40px -12px #ff6a00;animation:sv-ir-in .9s ease-out both,sv-ir-flow 6s linear infinite}
+.sv-theme-thermal .sv-card.sv-out{animation:sv-ir-out .25s ease-in both}
+.sv-theme-thermal .sv-card-body{border-radius:10px;padding:16px 26px 18px 18px;color:#ffe9d6;
+  background:radial-gradient(120% 90% at 85% 0%,rgba(255,110,0,.2),transparent 55%),radial-gradient(90% 70% at 0% 100%,rgba(120,0,140,.35),transparent 60%),#12051f;
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-thermal .sv-card-body::before{inset:12px 8px 12px auto;width:6px;height:auto;transform:none;animation:none;border-radius:3px;
+  background:linear-gradient(to top,#1b0036,#5b0a8f,#b3006b,#ff3d00,#ff9f00,#fff6c8);box-shadow:0 0 8px rgba(255,120,0,.5)}
+.sv-theme-thermal .sv-card-num{background:radial-gradient(circle at 40% 35%,#fffbe0,#ffc400 30%,#ff3d00 60%,#7a0a7a 100%);color:#1a0010;
+  box-shadow:0 0 0 2px rgba(255,255,255,.85),0 0 18px rgba(255,120,0,.9)}
+.sv-theme-thermal .sv-card h3{color:#fff;text-shadow:0 0 14px rgba(255,120,0,.65)}
+.sv-theme-thermal .sv-card-meta{display:block;margin-top:8px;font:600 11px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#ffb36b}
+.sv-theme-thermal .sv-card-meta::before{content:"\\25CE  SPOT \\25B8  "}
+.sv-theme-thermal .sv-card-text{color:#ffe9d6}
+.sv-theme-thermal .sv-card-text a{color:#ffc46b}
+.sv-theme-thermal .sv-card-close{right:20px;color:#ffb36b}
+.sv-theme-thermal .sv-card-close:hover{background:#ff6a00;color:#1a0010}
+.sv-theme-thermal .sv-card-foot{border-top:1px solid rgba(255,140,0,.28);color:#c9a0b8}
+.sv-theme-thermal .sv-card-foot button{color:#ffd0a0}
+.sv-theme-thermal .sv-card-foot button:hover{background:#ff6a00;color:#1a0010}
+.sv-theme-thermal .sv-marker{background:radial-gradient(circle at 40% 35%,#fffbe0,#ffc400 30%,#ff3d00 62%,#7a0a7a 100%);border:2px solid #fff;color:#1a0010;
+  box-shadow:0 0 16px rgba(255,110,0,.9),0 0 0 1px rgba(60,0,40,.5)}
+.sv-theme-thermal .sv-marker:hover,.sv-theme-thermal .sv-marker:focus-visible,.sv-theme-thermal .sv-marker.sv-active{background:radial-gradient(circle at 40% 35%,#fff,#fff3b0 35%,#ffb000 70%,#ff3d00 100%)}
+.sv-theme-thermal .sv-nav{background:#12051f;color:#ffe9d6;box-shadow:inset 0 -2px 0 #ff6a00,0 4px 14px rgba(90,0,60,.4)}
+.sv-theme-thermal .sv-nav button:hover{background:rgba(255,110,0,.25)}
+.sv-theme-thermal .sv-overlay .sv-leader{filter:drop-shadow(0 0 4px #ff6a00)}
+.sv-theme-thermal .sv-overlay .sv-leader-end{fill:#ffe8a0}
+@keyframes sv-ir-in{0%{opacity:0;transform:scale(1.15);filter:blur(16px) saturate(3) hue-rotate(-70deg)}55%{opacity:1;filter:blur(3px) saturate(1.6) hue-rotate(-20deg)}100%{opacity:1;transform:none;filter:none}}
+@keyframes sv-ir-out{to{opacity:0;filter:blur(10px) hue-rotate(60deg)}}
+@keyframes sv-ir-flow{to{background-position:100% 0}}
+/* ---- Theme: blueprint (engineering drawing) ---- */
+.sv-theme-blueprint{--sv-accent:#1d5fbf}
+.sv-theme-blueprint .sv-card{border-radius:2px;padding:0;background:#0f4c97;box-shadow:0 18px 40px -16px rgba(5,25,60,.65);transform-origin:0 50%!important;
+  animation:sv-bp-in .8s cubic-bezier(.6,0,.2,1) both}
+.sv-theme-blueprint .sv-card.sv-out{animation:sv-bp-out .3s ease-in both}
+.sv-theme-blueprint .sv-card-body{border-radius:2px;padding:20px 22px 18px;color:#e6efff;
+  background:linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px) 0 0/20px 20px,linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px) 0 0/20px 20px,
+    linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px) 0 0/5px 5px,linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px) 0 0/5px 5px,#0f4c97;
+  box-shadow:inset 0 0 0 6px #0f4c97,inset 0 0 0 7.5px rgba(255,255,255,.9),inset 0 0 0 10px #0f4c97,inset 0 0 0 11px rgba(255,255,255,.45);
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-blueprint .sv-card-body::before{display:none}
+.sv-theme-blueprint .sv-card-num{width:30px;height:30px;background:#0f4c97;color:#fff;font:600 13px/1 "Century Gothic","Futura","Avenir Next",sans-serif;
+  box-shadow:0 0 0 1.5px #fff}
+.sv-theme-blueprint .sv-card h3{font-family:"Century Gothic","Futura","Avenir Next","Segoe UI",sans-serif;font-weight:600;font-size:15px;text-transform:uppercase;letter-spacing:.14em;color:#fff}
+.sv-theme-blueprint .sv-card-meta{display:block;margin-top:10px;padding:4px 8px;border:1px solid rgba(255,255,255,.7);font:500 11px/1.3 ui-monospace,Menlo,Consolas,monospace;
+  color:#dbe8ff;letter-spacing:.04em}
+.sv-theme-blueprint .sv-card-meta::before{content:"DWG REF  "}
+.sv-theme-blueprint .sv-card-text{color:#e6efff;font-size:13.5px}
+.sv-theme-blueprint .sv-card-text a{color:#fff;text-decoration:underline}
+.sv-theme-blueprint .sv-card-close{top:14px;right:14px;color:#dbe8ff;border-radius:2px}
+.sv-theme-blueprint .sv-card-close:hover{background:#fff;color:#0f4c97}
+.sv-theme-blueprint .sv-card-foot{border-top:1px solid rgba(255,255,255,.55);color:#b9cff5;text-transform:uppercase;font-size:11px;letter-spacing:.12em}
+.sv-theme-blueprint .sv-card-foot button{color:#fff;border-radius:2px;letter-spacing:.1em}
+.sv-theme-blueprint .sv-card-foot button:hover{background:#fff;color:#0f4c97}
+.sv-theme-blueprint .sv-marker{background:#fff;border:2px solid #0f4c97;color:#0f4c97;font-family:"Century Gothic","Futura","Avenir Next",sans-serif;font-weight:600;
+  box-shadow:0 0 0 2px rgba(255,255,255,.8),0 3px 10px rgba(5,25,60,.4)}
+.sv-theme-blueprint .sv-marker:hover,.sv-theme-blueprint .sv-marker:focus-visible,.sv-theme-blueprint .sv-marker.sv-active{background:#0f4c97;color:#fff;border-color:#fff}
+.sv-theme-blueprint .sv-nav{border-radius:2px;background:#0f4c97;color:#fff;border:1px solid rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.1em;font-size:12px}
+.sv-theme-blueprint .sv-nav .sv-nav-title span{opacity:.7}
+.sv-theme-blueprint .sv-overlay .sv-leader{stroke:#0f4c97;stroke-width:1.5;filter:none}
+.sv-theme-blueprint .sv-overlay .sv-leader-end{fill:#0f4c97}
+@keyframes sv-bp-in{0%{opacity:0;clip-path:inset(0 100% 0 0)}10%{opacity:1}100%{opacity:1;clip-path:inset(0)}}
+@keyframes sv-bp-out{to{opacity:0;clip-path:inset(0 0 0 100%)}}
+/* ---- Theme: carbon (racing drone: carbon fibre and red) ---- */
+.sv-theme-carbon{--sv-accent:#ff2d3d}
+.sv-theme-carbon .sv-card{border-radius:14px 3px 14px 3px;padding:1.5px;background:linear-gradient(135deg,#ff2d3d,#5a0a12 40%,#ff2d3d 62%,#3a3a3a);
+  box-shadow:0 22px 46px -18px rgba(0,0,0,.75),0 0 30px -12px #ff2d3d;animation:sv-cf-in .6s cubic-bezier(.2,.9,.25,1) both}
+.sv-theme-carbon .sv-card.sv-out{animation:sv-cf-out .22s ease-in both}
+.sv-theme-carbon .sv-card-body{border-radius:12.5px 2px 12.5px 2px;padding:18px 20px 18px;color:#d6d6d6;
+  background:linear-gradient(27deg,#151515 5px,transparent 5px) 0 5px,linear-gradient(207deg,#151515 5px,transparent 5px) 10px 0,
+    linear-gradient(27deg,#232323 5px,transparent 5px) 0 10px,linear-gradient(207deg,#232323 5px,transparent 5px) 10px 5px,
+    linear-gradient(90deg,#1b1b1b 10px,transparent 10px),linear-gradient(#1d1d1d 25%,#1a1a1a 25%,#1a1a1a 50%,transparent 50%,transparent 75%,#242424 75%,#242424);
+  background-color:#131313;background-size:20px 20px;-webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-carbon .sv-card-body::before{background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.16) 45%,rgba(255,255,255,.03) 55%,transparent 65%)}
+.sv-theme-carbon .sv-card-body::after{content:"";position:absolute;left:0;top:0;width:90px;height:4px;pointer-events:none;
+  background:linear-gradient(90deg,#ff2d3d 0 30px,transparent 30px 36px,#ff2d3d 36px 52px,transparent 52px 58px,#ff2d3d 58px 64px,transparent 64px)}
+.sv-theme-carbon .sv-card-num{border-radius:4px;width:34px;height:26px;background:#ff2d3d;transform:skewX(-14deg);box-shadow:0 0 16px rgba(255,45,61,.6)}
+.sv-theme-carbon .sv-card h3{font-family:"Arial Black","Helvetica Neue",Arial,sans-serif;font-style:italic;font-weight:900;font-size:17px;text-transform:uppercase;letter-spacing:.02em;color:#fff}
+.sv-theme-carbon .sv-card-meta{display:block;margin-top:8px;font:600 11px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#ff6b76}
+.sv-theme-carbon .sv-card-meta::before{content:"\\25C6  "}
+.sv-theme-carbon .sv-card-text{color:#d6d6d6}
+.sv-theme-carbon .sv-card-text a{color:#ff6b76}
+.sv-theme-carbon .sv-card-close:hover{background:#ff2d3d;color:#fff}
+.sv-theme-carbon .sv-card-foot{border-top:1px solid rgba(255,255,255,.1);color:#8a8a8a;font-style:italic;text-transform:uppercase;font-size:11px;letter-spacing:.06em}
+.sv-theme-carbon .sv-card-foot button{color:#fff;font-weight:700}
+.sv-theme-carbon .sv-card-foot button:hover{background:#ff2d3d}
+.sv-theme-carbon .sv-marker{background:#ff2d3d;border:2px solid #fff;color:#fff;font-style:italic;box-shadow:0 0 0 3px rgba(0,0,0,.55),0 4px 14px rgba(255,45,61,.55)}
+.sv-theme-carbon .sv-marker:hover,.sv-theme-carbon .sv-marker:focus-visible,.sv-theme-carbon .sv-marker.sv-active{background:#fff;color:#ff2d3d;border-color:#ff2d3d}
+.sv-theme-carbon .sv-nav{border-radius:10px 2px 10px 2px;background:#141414;color:#fff;box-shadow:inset 3px 0 0 #ff2d3d,0 4px 14px rgba(0,0,0,.4);font-style:italic;text-transform:uppercase;font-size:12px;font-weight:700}
+.sv-theme-carbon .sv-nav button:hover{background:rgba(255,45,61,.3)}
+@keyframes sv-cf-in{0%{opacity:0;transform:translateX(50px) skewX(-14deg);filter:blur(8px)}60%{opacity:1;transform:translateX(-5px) skewX(3deg);filter:none}100%{opacity:1;transform:none;filter:none}}
+@keyframes sv-cf-out{to{opacity:0;transform:translateX(-40px) skewX(10deg);filter:blur(4px)}}
+/* ---- Theme: datasheet (black and amber, spaced monospace labels, like a product datasheet) ---- */
+.sv-theme-datasheet{--sv-accent:#e8b23a}
+.sv-theme-datasheet .sv-btn[aria-pressed="true"],.sv-theme-datasheet .sv-btn[aria-expanded="true"]{color:#0a0a0a}
+.sv-theme-datasheet .sv-card{border-radius:2px;padding:1px;background:#262626;width:min(320px,calc(100% - 20px));
+  box-shadow:0 26px 52px -20px rgba(0,0,0,.75);animation:sv-ds-in .65s cubic-bezier(.2,.8,.2,1) both}
+.sv-theme-datasheet .sv-card.sv-out{animation:sv-ds-out .22s ease-in both}
+.sv-theme-datasheet .sv-card-body{display:flex;flex-direction:column;border-radius:1px;padding:18px 22px 16px;color:#fff;
+  background:radial-gradient(90% 70% at 100% 0%,rgba(232,178,58,.09),transparent 60%),#0a0a0a;-webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-datasheet .sv-card-body::before{display:none}
+.sv-theme-datasheet .sv-card-img{order:-2}
+.sv-theme-datasheet .sv-card-meta{display:block;order:-1;margin:0 26px 12px 0;font:500 10px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.2em;text-transform:uppercase;color:#e8b23a}
+.sv-theme-datasheet .sv-card-head{gap:10px;padding:12px 0 0;border-top:2px solid #e8b23a;align-items:baseline}
+.sv-theme-datasheet .sv-card-num{display:inline-block;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;font-size:0}
+.sv-theme-datasheet .sv-card-num::before{content:"F." attr(data-ref);font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;color:#e8b23a}
+.sv-theme-datasheet .sv-card h3{font-family:var(--sv-datasheet-font,"Michroma","Eurostile","Microgramma","Bank Gothic","Rajdhani",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);
+  font-size:19px;font-weight:700;letter-spacing:-.005em;color:#fff}
+.sv-theme-datasheet .sv-card-text{margin-top:10px;font-size:13.5px;line-height:1.6}
+.sv-theme-datasheet .sv-card-text a{color:#e8b23a}
+.sv-theme-datasheet .sv-card-close{top:12px;right:12px;border-radius:2px;color:#8c8c8c}
+.sv-theme-datasheet .sv-card-close:hover{background:#e8b23a;color:#0a0a0a}
+.sv-theme-datasheet .sv-card-foot{margin-top:16px;padding-top:10px;border-top:1px solid #262626;color:#8c8c8c;
+  font:500 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.18em;text-transform:uppercase}
+.sv-theme-datasheet .sv-card-foot button{color:#fff;border-radius:2px;letter-spacing:.18em}
+.sv-theme-datasheet .sv-card-foot button:hover{background:#e8b23a;color:#0a0a0a}
+.sv-theme-datasheet .sv-card [contenteditable]{box-shadow:0 0 0 1px #333}
+.sv-theme-datasheet .sv-marker{border-radius:3px;background:#0a0a0a;border:1.5px solid #e8b23a;color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-weight:500;box-shadow:0 0 0 2px rgba(255,255,255,.55),0 4px 12px rgba(0,0,0,.45)}
+.sv-theme-datasheet .sv-marker:hover,.sv-theme-datasheet .sv-marker:focus-visible,.sv-theme-datasheet .sv-marker.sv-active{background:#e8b23a;color:#0a0a0a;border-color:#0a0a0a}
+.sv-theme-datasheet .sv-marker.sv-active::before,.sv-theme-datasheet .sv-marker.sv-active::after{border-radius:3px}
+.sv-theme-datasheet .sv-nav{border-radius:2px;background:#0a0a0a;color:#fff;border:1px solid #262626;font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.16em;text-transform:uppercase}
+.sv-theme-datasheet .sv-nav button{border-radius:2px}
+.sv-theme-datasheet .sv-nav button:hover{background:rgba(232,178,58,.2)}
+.sv-theme-datasheet .sv-nav .sv-nav-title span{color:#e8b23a;opacity:1}
+.sv-theme-datasheet .sv-overlay .sv-leader{stroke-width:1.5;filter:none}
+@keyframes sv-ds-in{0%{opacity:0;transform:translateY(10px);clip-path:inset(0 0 100% 0)}100%{opacity:1;transform:none;clip-path:inset(0)}}
+@keyframes sv-ds-out{to{opacity:0;transform:translateY(6px)}}
+.sv-card{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+/* Description text: pure white with no glow on every dark card, so it stays crisp. */
+.sv-card .sv-card-text,.sv-theme-digital .sv-card-text,.sv-theme-military .sv-card-text,.sv-theme-fpv .sv-card-text,.sv-theme-avionics .sv-card-text,
+.sv-theme-rover .sv-card-text,.sv-theme-thermal .sv-card-text,.sv-theme-blueprint .sv-card-text,.sv-theme-carbon .sv-card-text,.sv-theme-datasheet .sv-card-text{color:#fff;text-shadow:none}
+.sv-theme-agricultural .sv-card-text{color:#3b3222}
+.sv-theme-fpv .sv-card-body{text-shadow:0 1px 0 rgba(0,0,0,.85)}
+.sv-theme-avionics .sv-card-body{text-shadow:none}
+.sv-theme-avionics .sv-card h3{text-shadow:0 0 3px rgba(61,255,122,.45)}
+.sv-theme-digital .sv-card h3{text-shadow:0 0 4px rgba(0,255,156,.5)}
+.sv-theme-thermal .sv-card h3{text-shadow:0 0 6px rgba(255,120,0,.5)}
 @media (prefers-reduced-motion:reduce){.sv-card-body::after,.sv-card h3::after{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.sv-card,.sv-card-body::before,.sv-reveal,.sv-marker,.sv-marker::before,.sv-marker::after,.sv-overlay .sv-leader{animation:none!important}.sv-overlay .sv-leader{stroke-dashoffset:0}.sv-overlay .sv-leader-end{opacity:1}}
 @media (pointer:coarse){.sv-btn{width:40px;height:40px}.sv-menu button{padding:10px 12px}}
@@ -1569,7 +1835,8 @@
     }
 
     /**
-     * Change the look of markers and their cards: 'default', 'digital', 'military' or 'agricultural'.
+     * Change the look of markers and their cards: 'default', 'digital', 'military', 'agricultural', 'fpv',
+     * 'avionics', 'rover', 'thermal', 'blueprint', 'carbon' or 'datasheet'.
      * Any other name adds the class sv-theme-<name>, for your own CSS.
      */
     setTheme(name) {
