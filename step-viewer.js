@@ -616,10 +616,10 @@
 /* ---- Theme: datasheet (black and amber, spaced monospace labels, like a product datasheet) ---- */
 .sv-theme-datasheet{--sv-accent:#e8b23a}
 .sv-theme-datasheet .sv-btn[aria-pressed="true"],.sv-theme-datasheet .sv-btn[aria-expanded="true"]{color:#0a0a0a}
-.sv-theme-datasheet .sv-card{border-radius:2px;padding:1px;background:#262626;width:min(320px,calc(100% - 20px));
+.sv-theme-datasheet .sv-card{border-radius:1mm;padding:1px;background:#262626;width:min(320px,calc(100% - 20px));
   box-shadow:0 26px 52px -20px rgba(0,0,0,.75);animation:sv-ds-in .65s cubic-bezier(.2,.8,.2,1) both}
 .sv-theme-datasheet .sv-card.sv-out{animation:sv-ds-out .22s ease-in both}
-.sv-theme-datasheet .sv-card-body{display:flex;flex-direction:column;border-radius:1px;padding:18px 22px 16px;color:#fff;
+.sv-theme-datasheet .sv-card-body{display:flex;flex-direction:column;border-radius:calc(1mm - 1px);padding:18px 22px 16px;color:#fff;
   background:radial-gradient(90% 70% at 100% 0%,rgba(232,178,58,.09),transparent 60%),#0a0a0a;-webkit-backdrop-filter:none;backdrop-filter:none}
 .sv-theme-datasheet .sv-card-body::before{display:none}
 .sv-theme-datasheet .sv-card-img{order:-2}
@@ -639,11 +639,11 @@
 .sv-theme-datasheet .sv-card-foot button{color:#fff;border-radius:2px;letter-spacing:.18em}
 .sv-theme-datasheet .sv-card-foot button:hover{background:#e8b23a;color:#0a0a0a}
 .sv-theme-datasheet .sv-card [contenteditable]{box-shadow:0 0 0 1px #333}
-.sv-theme-datasheet .sv-marker{border-radius:3px;background:#0a0a0a;border:1.5px solid #e8b23a;color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+.sv-theme-datasheet .sv-marker{border-radius:1mm;background:#0a0a0a;border:1.5px solid #e8b23a;color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   font-weight:500;box-shadow:0 0 0 2px rgba(255,255,255,.55),0 4px 12px rgba(0,0,0,.45)}
 .sv-theme-datasheet .sv-marker:hover,.sv-theme-datasheet .sv-marker:focus-visible,.sv-theme-datasheet .sv-marker.sv-active{background:#e8b23a;color:#0a0a0a;border-color:#0a0a0a}
-.sv-theme-datasheet .sv-marker.sv-active::before,.sv-theme-datasheet .sv-marker.sv-active::after{border-radius:3px}
-.sv-theme-datasheet .sv-nav{border-radius:2px;background:#0a0a0a;color:#fff;border:1px solid #262626;font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+.sv-theme-datasheet .sv-marker.sv-active::before,.sv-theme-datasheet .sv-marker.sv-active::after{border-radius:1mm}
+.sv-theme-datasheet .sv-nav{border-radius:1mm;background:#0a0a0a;color:#fff;border:1px solid #262626;font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   letter-spacing:.16em;text-transform:uppercase}
 .sv-theme-datasheet .sv-nav button{border-radius:2px}
 .sv-theme-datasheet .sv-nav button:hover{background:rgba(232,178,58,.2)}
