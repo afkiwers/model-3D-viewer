@@ -67,6 +67,7 @@
     fullscreen: true,      // show the fullscreen button
     info: true,            // show the file name and overall size
     help: true,            // show a short controls hint after loading
+    markerSize: 30,        // marker diameter in pixels
     markers: null,         // hotspots: URL of a JSON file, or an array (see README)
     editor: false,         // marker editor: click the model to place markers and copy their JSON
     theme: 'default',      // look of markers and cards: default | digital | military | agricultural
@@ -191,12 +192,14 @@
 .sv-cube-btn:focus-visible{outline:2px solid var(--sv-accent)}
 .sv-cube-btn svg{width:17px;height:17px}
 .sv-markers{position:absolute;inset:0;pointer-events:none}
-.sv-marker{all:unset;box-sizing:border-box;position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;display:grid;place-items:center;
-  background:rgba(17,24,39,.6);border:2px solid #fff;color:#fff;font:700 12px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;cursor:pointer;pointer-events:auto;
-  box-shadow:0 2px 10px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+.sv-root{--sv-marker-size:30px}
+.sv-marker{all:unset;box-sizing:border-box;position:absolute;width:var(--sv-marker-size);height:var(--sv-marker-size);margin:calc(var(--sv-marker-size) / -2) 0 0 calc(var(--sv-marker-size) / -2);
+  border-radius:50%;display:grid;place-items:center;
+  background:#111827;border:2px solid #fff;color:#fff;font:700 calc(var(--sv-marker-size) * .44)/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;cursor:pointer;pointer-events:auto;
+  box-shadow:0 0 0 3px rgba(255,255,255,.5),0 3px 12px rgba(0,0,0,.5);
   transition:transform .25s cubic-bezier(.3,1.6,.5,1),opacity .3s,background-color .2s;animation:sv-pop .55s cubic-bezier(.3,1.6,.5,1) backwards;animation-delay:calc(var(--i,0) * 70ms + .2s)}
 .sv-marker:hover,.sv-marker:focus-visible{transform:scale(1.18);background:var(--sv-accent);outline:none}
-.sv-marker.sv-occluded{opacity:.32}
+.sv-marker.sv-occluded{opacity:.7;border-style:dashed;box-shadow:0 2px 8px rgba(0,0,0,.35)}
 .sv-marker.sv-active{background:var(--sv-accent);transform:scale(1.22);opacity:1;z-index:1}
 .sv-marker.sv-active::before,.sv-marker.sv-active::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--sv-accent);animation:sv-ping 2s cubic-bezier(0,.55,.45,1) infinite;pointer-events:none}
 .sv-marker.sv-active::after{animation-delay:1s}
@@ -1420,6 +1423,7 @@
       if (o.width != null) root.style.width = cssSize(o.width);
       if (o.height != null) root.style.height = cssSize(o.height);
       if (o.background) root.style.background = o.background;
+      root.style.setProperty('--sv-marker-size', (Number(o.markerSize) || 30) + 'px');
 
       this.svg = svgEl('svg');
       this.svg.setAttribute('class', 'sv-overlay');

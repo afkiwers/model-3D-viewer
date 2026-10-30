@@ -90,6 +90,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `measure` | `true` | Show the ruler button. |
 | `markers` | none | Markers: URL of a JSON file, or an array in JavaScript. See [Markers](#markers). |
 | `editor` | `false` | Marker editor: place markers by clicking and copy their JSON. |
+| `markerSize` | `30` | Marker diameter in pixels. |
 | `theme` | `default` | Look of the markers and their cards: `default`, `digital`, `military` or `agricultural`. See [Marker themes](#marker-themes). |
 | `views` | `true` | Show the standard views menu. |
 | `fullscreen` | `true` | Show the fullscreen button. |
