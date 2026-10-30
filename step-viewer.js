@@ -73,7 +73,7 @@
     pivot: 'rotate',       // centre of rotation indicator: 'rotate' (while turning), 'always' or 'off'
     markers: null,         // hotspots: URL of a JSON file, or an array (see README)
     editor: false,         // marker editor: click the model to place markers and copy their JSON
-    theme: 'default',      // markers and cards: default | digital | military | agricultural | fpv | avionics | rover | thermal | blueprint | carbon | datasheet
+    theme: 'default',      // markers and cards: default | digital | military | agricultural | fpv | avionics | rover | thermal | blueprint | carbon | amber | volt | specsheet
   };
   // Site-wide defaults, e.g. window.StepViewerConfig = { defaults: { download: false } }
   if (config.defaults) Object.assign(DEFAULTS, config.defaults);
@@ -613,49 +613,120 @@
 .sv-theme-carbon .sv-nav button:hover{background:rgba(255,45,61,.3)}
 @keyframes sv-cf-in{0%{opacity:0;transform:translateX(50px) skewX(-14deg);filter:blur(8px)}60%{opacity:1;transform:translateX(-5px) skewX(3deg);filter:none}100%{opacity:1;transform:none;filter:none}}
 @keyframes sv-cf-out{to{opacity:0;transform:translateX(-40px) skewX(10deg);filter:blur(4px)}}
-/* ---- Theme: datasheet (black and amber, spaced monospace labels, like a product datasheet) ---- */
-.sv-theme-datasheet{--sv-accent:#e8b23a}
-.sv-theme-datasheet .sv-btn[aria-pressed="true"],.sv-theme-datasheet .sv-btn[aria-expanded="true"]{color:#0a0a0a}
-.sv-theme-datasheet .sv-card{border-radius:1mm;padding:1px;background:#262626;width:min(320px,calc(100% - 20px));
+/* ---- Theme: amber (black and amber, spaced monospace labels, like a product datasheet) ---- */
+.sv-theme-amber{--sv-accent:#e8b23a}
+.sv-theme-amber .sv-btn[aria-pressed="true"],.sv-theme-amber .sv-btn[aria-expanded="true"]{color:#0a0a0a}
+.sv-theme-amber .sv-card{border-radius:1mm;padding:1px;background:#262626;width:min(320px,calc(100% - 20px));
   box-shadow:0 26px 52px -20px rgba(0,0,0,.75);animation:sv-ds-in .65s cubic-bezier(.2,.8,.2,1) both}
-.sv-theme-datasheet .sv-card.sv-out{animation:sv-ds-out .22s ease-in both}
-.sv-theme-datasheet .sv-card-body{display:flex;flex-direction:column;border-radius:calc(1mm - 1px);padding:18px 22px 16px;color:#fff;
+.sv-theme-amber .sv-card.sv-out{animation:sv-ds-out .22s ease-in both}
+.sv-theme-amber .sv-card-body{display:flex;flex-direction:column;border-radius:calc(1mm - 1px);padding:18px 22px 16px;color:#fff;
   background:radial-gradient(90% 70% at 100% 0%,rgba(232,178,58,.09),transparent 60%),#0a0a0a;-webkit-backdrop-filter:none;backdrop-filter:none}
-.sv-theme-datasheet .sv-card-body::before{display:none}
-.sv-theme-datasheet .sv-card-img{order:-2}
-.sv-theme-datasheet .sv-card-meta{display:block;order:-1;margin:0 26px 12px 0;font:500 10px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+.sv-theme-amber .sv-card-body::before{display:none}
+.sv-theme-amber .sv-card-img{order:-2}
+.sv-theme-amber .sv-card-meta{display:block;order:-1;margin:0 26px 12px 0;font:500 10px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   letter-spacing:.2em;text-transform:uppercase;color:#e8b23a}
-.sv-theme-datasheet .sv-card-head{gap:10px;padding:12px 0 0;border-top:2px solid #e8b23a;align-items:baseline}
-.sv-theme-datasheet .sv-card-num{display:inline-block;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;font-size:0}
-.sv-theme-datasheet .sv-card-num::before{content:"F." attr(data-ref);font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;color:#e8b23a}
-.sv-theme-datasheet .sv-card h3{font-family:var(--sv-datasheet-font,"Michroma","Eurostile","Microgramma","Bank Gothic","Rajdhani",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);
+.sv-theme-amber .sv-card-head{gap:10px;padding:12px 0 0;border-top:2px solid #e8b23a;align-items:baseline}
+.sv-theme-amber .sv-card-num{display:inline-block;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;font-size:0}
+.sv-theme-amber .sv-card-num::before{content:"F." attr(data-ref);font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;color:#e8b23a}
+.sv-theme-amber .sv-card h3{font-family:var(--sv-amber-font,"Michroma","Eurostile","Microgramma","Bank Gothic","Rajdhani",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);
   font-size:19px;font-weight:700;letter-spacing:-.005em;color:#fff}
-.sv-theme-datasheet .sv-card-text{margin-top:10px;font-size:13.5px;line-height:1.6}
-.sv-theme-datasheet .sv-card-text a{color:#e8b23a}
-.sv-theme-datasheet .sv-card-close{top:12px;right:12px;border-radius:2px;color:#8c8c8c}
-.sv-theme-datasheet .sv-card-close:hover{background:#e8b23a;color:#0a0a0a}
-.sv-theme-datasheet .sv-card-foot{margin-top:16px;padding-top:10px;border-top:1px solid #262626;color:#8c8c8c;
+.sv-theme-amber .sv-card-text{margin-top:10px;font-size:13.5px;line-height:1.6}
+.sv-theme-amber .sv-card-text a{color:#e8b23a}
+.sv-theme-amber .sv-card-close{top:12px;right:12px;border-radius:2px;color:#8c8c8c}
+.sv-theme-amber .sv-card-close:hover{background:#e8b23a;color:#0a0a0a}
+.sv-theme-amber .sv-card-foot{margin-top:16px;padding-top:10px;border-top:1px solid #262626;color:#8c8c8c;
   font:500 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.18em;text-transform:uppercase}
-.sv-theme-datasheet .sv-card-foot button{color:#fff;border-radius:2px;letter-spacing:.18em}
-.sv-theme-datasheet .sv-card-foot button:hover{background:#e8b23a;color:#0a0a0a}
-.sv-theme-datasheet .sv-card [contenteditable]{box-shadow:0 0 0 1px #333}
-.sv-theme-datasheet .sv-marker{border-radius:1mm;background:#0a0a0a;border:1.5px solid #e8b23a;color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+.sv-theme-amber .sv-card-foot button{color:#fff;border-radius:2px;letter-spacing:.18em}
+.sv-theme-amber .sv-card-foot button:hover{background:#e8b23a;color:#0a0a0a}
+.sv-theme-amber .sv-card [contenteditable]{box-shadow:0 0 0 1px #333}
+.sv-theme-amber .sv-marker{border-radius:1mm;background:#0a0a0a;border:1.5px solid #e8b23a;color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   font-weight:500;box-shadow:0 0 0 2px rgba(255,255,255,.55),0 4px 12px rgba(0,0,0,.45)}
-.sv-theme-datasheet .sv-marker:hover,.sv-theme-datasheet .sv-marker:focus-visible,.sv-theme-datasheet .sv-marker.sv-active{background:#e8b23a;color:#0a0a0a;border-color:#0a0a0a}
-.sv-theme-datasheet .sv-marker.sv-active::before,.sv-theme-datasheet .sv-marker.sv-active::after{border-radius:1mm}
-.sv-theme-datasheet .sv-nav{border-radius:1mm;background:#0a0a0a;color:#fff;border:1px solid #262626;font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+.sv-theme-amber .sv-marker:hover,.sv-theme-amber .sv-marker:focus-visible,.sv-theme-amber .sv-marker.sv-active{background:#e8b23a;color:#0a0a0a;border-color:#0a0a0a}
+.sv-theme-amber .sv-marker.sv-active::before,.sv-theme-amber .sv-marker.sv-active::after{border-radius:1mm}
+.sv-theme-amber .sv-nav{border-radius:1mm;background:#0a0a0a;color:#fff;border:1px solid #262626;font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   letter-spacing:.16em;text-transform:uppercase}
-.sv-theme-datasheet .sv-nav button{border-radius:2px}
-.sv-theme-datasheet .sv-nav button:hover{background:rgba(232,178,58,.2)}
-.sv-theme-datasheet .sv-nav .sv-nav-title span{color:#e8b23a;opacity:1}
-.sv-theme-datasheet .sv-overlay .sv-leader{stroke-width:1.5;filter:none}
+.sv-theme-amber .sv-nav button{border-radius:2px}
+.sv-theme-amber .sv-nav button:hover{background:rgba(232,178,58,.2)}
+.sv-theme-amber .sv-nav .sv-nav-title span{color:#e8b23a;opacity:1}
+.sv-theme-amber .sv-overlay .sv-leader{stroke-width:1.5;filter:none}
 @keyframes sv-ds-in{0%{opacity:0;transform:translateY(10px);clip-path:inset(0 0 100% 0)}100%{opacity:1;transform:none;clip-path:inset(0)}}
 @keyframes sv-ds-out{to{opacity:0;transform:translateY(6px)}}
+/* ---- Theme: volt (black rounded panels, vivid orange, bold grotesk) ---- */
+.sv-theme-volt{--sv-accent:#ff6b00}
+.sv-theme-volt .sv-btn[aria-pressed="true"],.sv-theme-volt .sv-btn[aria-expanded="true"]{color:#000}
+.sv-theme-volt .sv-card{border-radius:18px;padding:0;background:#000;width:min(320px,calc(100% - 20px));
+  box-shadow:0 26px 54px -20px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.07);animation:sv-volt-in .5s cubic-bezier(.2,.9,.3,1) both}
+.sv-theme-volt .sv-card.sv-out{animation:sv-volt-out .22s ease-in both}
+.sv-theme-volt .sv-card-body{display:flex;flex-direction:column;border-radius:18px;padding:20px 22px 16px;color:#fff;background:#000;
+  font-family:"Inter","Helvetica Neue",Arial,system-ui,sans-serif;-webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-volt .sv-card-body::before{inset:0;z-index:3;width:auto;height:auto;background:#ff6b00;transform-origin:100% 50%;transform:scaleX(1);
+  animation:sv-volt-wipe .55s .12s cubic-bezier(.75,0,.25,1) forwards}
+.sv-theme-volt .sv-card-img{order:-2;border-radius:0}
+.sv-theme-volt .sv-card-meta{display:block;order:-1;margin:0 28px 10px 0;font:700 11px/1.4 "Inter","Helvetica Neue",Arial,sans-serif;
+  text-transform:uppercase;color:#ff6b00}
+.sv-theme-volt .sv-card-head{gap:8px;align-items:baseline}
+.sv-theme-volt .sv-card-num{display:inline-block;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;font-size:0}
+.sv-theme-volt .sv-card-num::before{content:attr(data-ref);font:700 23px/1.1 "Inter","Helvetica Neue",Arial,sans-serif;letter-spacing:-.02em;color:#ff6b00}
+.sv-theme-volt .sv-card h3{font-size:23px;line-height:1.1;font-weight:700;letter-spacing:-.02em;color:#fff}
+.sv-theme-volt .sv-card-text{margin-top:12px;font-size:14px;line-height:1.5}
+.sv-theme-volt .sv-card-text a{color:#ff6b00}
+.sv-theme-volt .sv-card-close{top:14px;right:14px;color:#9a9a9a}
+.sv-theme-volt .sv-card-close:hover{background:#ff6b00;color:#000}
+.sv-theme-volt .sv-card-foot{margin-top:16px;padding-top:10px;border-top:1px solid #2e2e2e;color:#8a8a8a;font-size:12px}
+.sv-theme-volt .sv-card-foot button{color:#fff;font-weight:700;border-radius:999px}
+.sv-theme-volt .sv-card-foot button:hover{background:#ff6b00;color:#000}
+.sv-theme-volt .sv-reveal{animation-delay:calc(.45s + var(--d,0) * 70ms)}
+.sv-theme-volt .sv-marker{border:0;border-radius:0;background:#ff6b00;color:#000;font-weight:800;box-shadow:none;
+  clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)}
+.sv-theme-volt .sv-marker:hover,.sv-theme-volt .sv-marker:focus-visible,.sv-theme-volt .sv-marker.sv-active{background:#000;color:#ff6b00}
+.sv-theme-volt .sv-marker.sv-occluded{opacity:.7}
+.sv-theme-volt .sv-nav{border-radius:14px;background:#000;color:#fff;font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-weight:700}
+.sv-theme-volt .sv-nav button:hover{background:rgba(255,107,0,.25)}
+.sv-theme-volt .sv-nav .sv-nav-title span{color:#ff6b00;opacity:1}
+.sv-theme-volt .sv-overlay .sv-leader{filter:none;stroke-width:2.5}
+@keyframes sv-volt-in{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:none}}
+@keyframes sv-volt-out{to{opacity:0;transform:translateY(10px)}}
+@keyframes sv-volt-wipe{to{transform:scaleX(0)}}
+/* ---- Theme: specsheet (white engineering datasheet, red accents, drawing frame) ---- */
+.sv-theme-specsheet{--sv-accent:#e2001a}
+.sv-theme-specsheet .sv-card{border-radius:0;padding:1px;background:#1a1a1a;width:min(320px,calc(100% - 20px));
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.45);animation:sv-ss-in .45s cubic-bezier(.2,.8,.2,1) both}
+.sv-theme-specsheet .sv-card.sv-out{animation:sv-ss-out .2s ease-in both}
+.sv-theme-specsheet .sv-card-body{border-radius:0;padding:30px 18px 14px;color:#1a1a1a;background:#fff;
+  font-family:Arial,"Helvetica Neue",Helvetica,sans-serif;-webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-theme-specsheet .sv-card-body::before{inset:0 0 auto 0;height:14px;transform:none;animation:none;border-bottom:1px solid #1a1a1a;
+  background:repeating-linear-gradient(90deg,#1a1a1a 0 1px,transparent 1px 16.666%) 0 0/100% 100%,#f4f4f4}
+.sv-theme-specsheet .sv-card-num{border-radius:4px 4px 4px 0;width:26px;height:26px;background:#e2001a;color:#fff;box-shadow:none;
+  font:700 13px/1 Arial,"Helvetica Neue",sans-serif}
+.sv-theme-specsheet .sv-card h3{font:700 18px/1.2 Arial,"Helvetica Neue",Helvetica,sans-serif;color:#1a1a1a;letter-spacing:0}
+.sv-theme-specsheet .sv-card-meta{display:block;margin-top:12px;padding:4px 8px;background:#ebebeb;font:12px/1.4 Arial,"Helvetica Neue",sans-serif;color:#1a1a1a}
+.sv-theme-specsheet .sv-card-meta::before{content:"Position   ";font-weight:700}
+.sv-theme-specsheet .sv-card-text{margin-top:10px;color:#1a1a1a;font-size:13.5px;line-height:1.5}
+.sv-theme-specsheet .sv-card-text a{color:#e2001a}
+.sv-theme-specsheet .sv-card-close{top:20px;right:8px;color:#1a1a1a;border-radius:0}
+.sv-theme-specsheet .sv-card-close:hover{background:#e2001a;color:#fff}
+.sv-theme-specsheet .sv-card-foot{margin-top:14px;padding-top:8px;border-top:1px solid #1a1a1a;color:#555;font-size:11.5px}
+.sv-theme-specsheet .sv-card-foot button{color:#e2001a;font-weight:700;border-radius:0}
+.sv-theme-specsheet .sv-card-foot button:hover{background:#e2001a;color:#fff}
+.sv-theme-specsheet .sv-card [contenteditable]{box-shadow:0 0 0 1px #ccc}
+.sv-theme-specsheet .sv-marker{background:#e2001a;border:2px solid #fff;color:#fff;font-family:Arial,"Helvetica Neue",sans-serif;
+  box-shadow:0 0 0 1.5px #1a1a1a,0 3px 10px rgba(0,0,0,.35)}
+.sv-theme-specsheet .sv-marker:hover,.sv-theme-specsheet .sv-marker:focus-visible,.sv-theme-specsheet .sv-marker.sv-active{background:#1a1a1a}
+.sv-theme-specsheet .sv-marker.sv-active::before,.sv-theme-specsheet .sv-marker.sv-active::after{border-color:#e2001a}
+.sv-theme-specsheet .sv-nav{border-radius:0;background:#fff;color:#1a1a1a;border:1px solid #1a1a1a;font-family:Arial,"Helvetica Neue",sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.sv-theme-specsheet .sv-nav button{border-radius:0}
+.sv-theme-specsheet .sv-nav button:hover{background:#f1f1f1}
+.sv-theme-specsheet .sv-nav .sv-nav-title span{color:#e2001a;opacity:1;font-weight:700}
+.sv-theme-specsheet .sv-overlay .sv-leader{stroke:#1a1a1a;stroke-width:1.25;filter:none}
+.sv-theme-specsheet .sv-overlay .sv-leader-end{fill:#e2001a}
+@keyframes sv-ss-in{0%{opacity:0;transform:translateY(8px) scale(.98)}100%{opacity:1;transform:none}}
+@keyframes sv-ss-out{to{opacity:0;transform:scale(.98)}}
 .sv-card{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 /* Description text: pure white with no glow on every dark card, so it stays crisp. */
 .sv-card .sv-card-text,.sv-theme-digital .sv-card-text,.sv-theme-military .sv-card-text,.sv-theme-fpv .sv-card-text,.sv-theme-avionics .sv-card-text,
-.sv-theme-rover .sv-card-text,.sv-theme-thermal .sv-card-text,.sv-theme-blueprint .sv-card-text,.sv-theme-carbon .sv-card-text,.sv-theme-datasheet .sv-card-text{color:#fff;text-shadow:none}
+.sv-theme-rover .sv-card-text,.sv-theme-thermal .sv-card-text,.sv-theme-blueprint .sv-card-text,.sv-theme-carbon .sv-card-text,.sv-theme-amber .sv-card-text,.sv-theme-volt .sv-card-text{color:#fff;text-shadow:none}
 .sv-theme-agricultural .sv-card-text{color:#3b3222}
+.sv-theme-specsheet .sv-card-text{color:#1a1a1a}
 .sv-theme-fpv .sv-card-body{text-shadow:0 1px 0 rgba(0,0,0,.85)}
 .sv-theme-avionics .sv-card-body{text-shadow:none}
 .sv-theme-avionics .sv-card h3{text-shadow:0 0 3px rgba(61,255,122,.45)}
@@ -1836,7 +1907,7 @@
 
     /**
      * Change the look of markers and their cards: 'default', 'digital', 'military', 'agricultural', 'fpv',
-     * 'avionics', 'rover', 'thermal', 'blueprint', 'carbon' or 'datasheet'.
+     * 'avionics', 'rover', 'thermal', 'blueprint', 'carbon', 'amber', 'volt' or 'specsheet'.
      * Any other name adds the class sv-theme-<name>, for your own CSS.
      */
     setTheme(name) {

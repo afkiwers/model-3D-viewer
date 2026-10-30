@@ -96,7 +96,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `editor` | `false` | Marker editor: place markers by clicking and copy their JSON. |
 | `markerSize` | `30` | Marker diameter in pixels. |
 | `pivot` | `rotate` | Crosshair at the centre of rotation: `rotate` (while turning the model), `always` or `off`. |
-| `theme` | `default` | Look of the markers and their cards: `default`, `digital`, `military`, `agricultural`, `fpv`, `avionics`, `rover`, `thermal`, `blueprint`, `carbon` or `datasheet`. See [Marker themes](#marker-themes). |
+| `theme` | `default` | Look of the markers and their cards: `default`, `digital`, `military`, `agricultural`, `fpv`, `avionics`, `rover`, `thermal`, `blueprint`, `carbon`, `amber`, `volt` or `specsheet`. See [Marker themes](#marker-themes). |
 | `views` | `true` | Show the standard views menu. |
 | `fullscreen` | `true` | Show the fullscreen button. |
 | `info` | `true` | Show the file name and overall size (X × Y × Z). |
@@ -291,9 +291,12 @@ Pick a look for the markers, their cards and the marker bar with `data-theme`, t
 | **`blueprint`** | **`carbon`** |
 | ![Blueprint theme](docs/themes/blueprint.png) | ![Carbon theme](docs/themes/carbon.png) |
 | Engineering drawing: grid paper, double frame, balloon callouts and a drawing reference; draws itself in. | Racing drone carbon fibre with red accents and italic racing type; slides in at speed. |
-| **`datasheet`** | |
-| ![Datasheet theme](docs/themes/datasheet.png) | |
-| Product datasheet: black and amber, spaced monospace labels, an amber rule and an "F.01" style index; wipes in like a printed page. Set `--sv-datasheet-font` to use your brand's heading font. | |
+| **`amber`** | **`volt`** |
+| ![Amber theme](docs/themes/amber.png) | ![Volt theme](docs/themes/volt.png) |
+| Product datasheet style: black and amber, spaced monospace labels, an amber rule and an "F.01" style index; wipes in like a printed page. Set `--sv-amber-font` to use your brand's heading font. | Black panels with big rounded corners, vivid orange and bold type, hexagon markers; an orange panel sweeps away to reveal the card. |
+| **`specsheet`** | |
+| ![Specsheet theme](docs/themes/specsheet.png) | |
+| Classic engineering datasheet: white paper, black drawing frame with a zone ruler, red accents and a grey spec-table row for the position. | |
 
 Any other name adds the class `sv-theme-<name>` to the viewer, so you can write your own theme in CSS,
 starting from the `.sv-theme-digital` rules in `step-viewer.js`.
