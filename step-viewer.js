@@ -2552,8 +2552,34 @@
 
   global.StepViewer = StepViewer;
 
+  // Pages built by JavaScript (Wiki.js, single-page apps) can add or replace viewer elements after
+  // loading. Watch for them, set up new ones and free viewers whose element has left the page.
+  function watchPage() {
+    if (!('MutationObserver' in global) || !document.body) return;
+    let queued = false;
+    const sweep = () => {
+      queued = false;
+      instances.forEach((viewer, node) => {
+        if (!node.isConnected) viewer.dispose();
+      });
+      StepViewer.init();
+    };
+    new MutationObserver((mutations) => {
+      if (queued) return;
+      // Ignore the viewers' own DOM updates.
+      const relevant = mutations.some((m) => !(m.target.closest && m.target.closest('.sv-root')));
+      if (!relevant) return;
+      queued = true;
+      requestAnimationFrame(sweep);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
   if (config.autoInit) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => StepViewer.init());
-    else StepViewer.init();
+    const start = () => {
+      StepViewer.init();
+      watchPage();
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
   }
 })(window);

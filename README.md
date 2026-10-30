@@ -46,6 +46,26 @@ the page loads. The model only starts loading once it is scrolled into view.
 
 The file must be served from your own site (or from a server that allows cross-origin requests).
 
+### Using it in Wiki.js or another CMS
+
+Use **full paths** (starting with `/` or `https://`) for the script and the model. A relative path such as
+`js/step-viewer.js` is looked up next to the current page, so on a wiki page like `/en/docs/drawings` the
+browser asks for `/en/docs/drawings/js/step-viewer.js`. The wiki answers with a "page not found" page, and the
+browser refuses to run it (*"MIME type ('text/plain') is not executable"*).
+
+You don't have to host the script yourself: jsDelivr serves it from this repository's releases.
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/afkiwers/model-3D-viewer@0.0.6/step-viewer.js"></script>
+
+<div class="step-viewer" data-src="/files/drawings/bracket.step"></div>
+```
+
+In **Wiki.js**, the cleanest place for the script tag is *Administration → Theme → Head HTML Injection*, so
+every page can use viewers. Upload the model as an asset and use the path Wiki.js gives it, starting with `/`.
+Viewers also work when the page content is rendered by JavaScript after loading, as Wiki.js and other
+single-page apps do.
+
 ## Options
 
 Set options as `data-*` attributes on the element, or pass them to `StepViewer.create()`.
