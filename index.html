@@ -78,6 +78,8 @@
     .privacy-note svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
     .load-error { color: #b91c1c; font-size: 14px; margin: -4px 0 12px; }
     .load-error:empty { display: none; }
+    /* Preview of a transparent background: a checkerboard stands for the page behind the viewer. */
+    #work-viewer.transparent-preview { background: repeating-conic-gradient(#e5e7eb 0 25%, #fff 0 50%) 0 0 / 20px 20px !important; }
     #work-viewer.drag-over::after { content: "Drop to open"; position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; border-radius: inherit;
       border: 3px dashed #ef5a24; background: rgba(255,247,237,.85); color: #c2410c; font-size: 20px; font-weight: 600; pointer-events: none; }
     .config { margin-top: 16px; padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e5e7eb; }
@@ -181,6 +183,7 @@
       </label>
       <label><input type="checkbox" id="opt-download" checked> Download button</label>
       <label><input type="checkbox" id="opt-measure" checked> Ruler</label>
+      <label title="The page behind the viewer shows through; the checkerboard here stands for your page"><input type="checkbox" id="opt-transparent"> Transparent background</label>
       <button type="button" id="use-view">Use current view as starting view</button>
     </div>
 
@@ -290,6 +293,7 @@
       if (cube !== 'button') lines.push('     data-view-cube="' + cube + '"');
       if (!document.getElementById('opt-download').checked) lines.push('     data-download="false"');
       if (!document.getElementById('opt-measure').checked) lines.push('     data-measure="false"');
+      if (document.getElementById('opt-transparent').checked) lines.push('     data-transparent="true"');
       lines.push('     data-height="500"></div>', '', '<script src="step-viewer.js"></' + 'script>');
       document.getElementById('config-html').textContent = lines.join('\n');
       document.getElementById('config-markers').textContent = markers.length
@@ -358,7 +362,8 @@
       orientationStatus.textContent = '';
       render();
     });
-    ['opt-cube', 'opt-download', 'opt-measure'].forEach((id) => document.getElementById(id).addEventListener('change', render));
+    ['opt-cube', 'opt-download', 'opt-measure', 'opt-transparent'].forEach((id) => document.getElementById(id).addEventListener('change', render));
+    document.getElementById('opt-transparent').addEventListener('change', (e) => work.classList.toggle('transparent-preview', e.target.checked));
 
     const useView = document.getElementById('use-view');
     useView.addEventListener('click', () => {

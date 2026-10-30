@@ -101,6 +101,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `fileColors` | `true` | Use the colours stored in the file. |
 | `edges` | `true` | Draw the CAD edges. |
 | `edgeColor` | `#27303b` | Colour of the edges. |
+| `transparent` | `false` | No background at all, so the viewer blends into your page. |
 | `background` | light grey gradient | Any CSS background, for example `#fff`, `transparent` or a gradient. |
 | `quality` | `normal` | Tessellation detail: `low`, `normal` or `high`. Use `high` for small curved details. |
 | `lazy` | `true` | Wait until the viewer is scrolled into view before loading. |

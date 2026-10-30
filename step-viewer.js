@@ -55,6 +55,7 @@
     edges: true,           // draw CAD edges
     edgeColor: '#27303b',
     background: null,      // any CSS background; default is a light grey gradient
+    transparent: false,    // no background at all, so the page shows through (same as background: 'transparent')
     autoRotate: 0,         // degrees per second, stops when the visitor interacts (true = 20)
     lazy: true,            // only load when scrolled into view
     download: true,        // show the download button
@@ -1428,7 +1429,8 @@
       if (!root.hasAttribute('tabindex')) root.tabIndex = 0;
       if (o.width != null) root.style.width = cssSize(o.width);
       if (o.height != null) root.style.height = cssSize(o.height);
-      if (o.background) root.style.background = o.background;
+      if (o.transparent) root.style.background = 'transparent';
+      else if (o.background) root.style.background = o.background;
       root.style.setProperty('--sv-marker-size', (Number(o.markerSize) || 30) + 'px');
 
       this.svg = svgEl('svg');
