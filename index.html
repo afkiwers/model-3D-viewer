@@ -73,6 +73,11 @@
     .load-btn:hover { background: #d9481a; }
     .load-btn:focus-visible { outline: 2px solid #1f2937; outline-offset: 2px; }
     .load-btn svg { width: 18px; height: 18px; }
+    .load-btn.secondary { background: #fff; color: #c2410c; box-shadow: inset 0 0 0 1.5px #ef5a24; }
+    .load-btn.secondary:hover { background: #fff7ed; }
+    .load-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+    .load-status { color: #15803d; font-size: 14px; margin: -4px 0 12px; }
+    .load-status:empty { display: none; }
     .privacy-note { display: flex; align-items: flex-start; gap: 8px; flex: 1 1 280px; margin: 0; padding: 8px 12px; border-radius: 9px;
       background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: 13.5px; line-height: 1.45; }
     .privacy-note svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
@@ -140,18 +145,26 @@
     title and text straight into the card.</p>
 
   <div class="local-bar">
-    <button type="button" class="load-btn" id="load-file">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18V9.5A1.5 1.5 0 0 0 18.5 8H12l-2-2.5H5.5A1.5 1.5 0 0 0 4 7z"/><path d="M12 11v5M9.5 13.5 12 11l2.5 2.5"/></svg>
-      Load local file
-    </button>
+    <div class="load-buttons">
+      <button type="button" class="load-btn" id="load-file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18V9.5A1.5 1.5 0 0 0 18.5 8H12l-2-2.5H5.5A1.5 1.5 0 0 0 4 7z"/><path d="M12 11v5M9.5 13.5 12 11l2.5 2.5"/></svg>
+        Load local file
+      </button>
+      <button type="button" class="load-btn secondary" id="load-markers">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
+        Load markers file
+      </button>
+    </div>
     <input type="file" id="file-input" accept=".step,.stp,.iges,.igs,.brep,.brp" hidden>
+    <input type="file" id="markers-input" accept=".json,application/json" hidden>
     <p class="privacy-note">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-      <span><strong>Your file stays on your computer.</strong> It is opened by your browser only; nothing is uploaded and no
-        part of it leaves your device. You can also drop a file onto the viewer.</span>
+      <span><strong>Your files stay on your computer.</strong> They are opened by your browser only; nothing is uploaded
+        and no part of them leaves your device. You can also drop a model and its markers file onto the viewer.</span>
     </p>
   </div>
   <p class="load-error" id="load-error" role="alert"></p>
+  <p class="load-status" id="load-status" role="status"></p>
 
   <div class="step-viewer" id="work-viewer"
        data-src="models/Connector.stp"
@@ -196,7 +209,8 @@
     </div>
 
     <h3><span class="step">4</span>Markers file <code id="config-markers-name"></code></h3>
-    <p>Updates as you add and edit markers.</p>
+    <p>Updates as you add and edit markers. To change an existing markers file, open the model and then
+      <strong>Load markers file</strong> above.</p>
     <pre id="config-markers"></pre>
     <div class="config-actions">
       <button type="button" data-copy="config-markers">Copy JSON</button>
@@ -277,7 +291,7 @@
     const state = { modelName: 'Connector.stp', view: null, rotation: [0, 0, 0] };
 
     const baseName = () => state.modelName.replace(/\.[^.]+$/, '');
-    const markersName = () => baseName() + '.markers.json';
+    const markersName = () => state.markersFile || baseName() + '.markers.json';
     const currentTheme = () => (document.querySelector('[data-theme-choice][aria-pressed="true"]') || {}).dataset?.themeChoice || 'default';
     const attr = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
@@ -314,12 +328,60 @@
       state.modelName = file.name;
       state.view = null;
       state.rotation = [0, 0, 0];
+      state.markersFile = null;
+      loadStatus.textContent = '';
       document.getElementById('orientation-status').textContent = '';
       const viewer = StepViewer.create(work, { src: file, markers: [], editor: true, view: 'iso', zoom: 1, lazy: false, viewCube: 'open', theme: currentTheme() });
-      viewer.ready.then(render, () => {});
+      viewer.ready.then(() => { applyPendingMarkers(); render(); }, () => {});
       render();
       work.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+
+    // An existing markers file is read in the browser too, and placed on the model once it has loaded.
+    const loadStatus = document.getElementById('load-status');
+    const markersInput = document.getElementById('markers-input');
+    let pendingMarkers = null;
+
+    function applyPendingMarkers() {
+      const viewer = StepViewer.get(work);
+      if (!pendingMarkers || !viewer || !viewer.model) return;
+      const { list, fileName, skipped } = pendingMarkers;
+      pendingMarkers = null;
+      viewer.setMarkers(list);
+      state.markersFile = fileName;
+      loadStatus.textContent = 'Loaded ' + list.length + (list.length === 1 ? ' marker' : ' markers') + ' from ' + fileName
+        + (skipped ? ' (' + skipped + ' without a position were left out)' : '')
+        + '. Drag, edit, add or delete them, then copy or download the file below.';
+      render();
+    }
+
+    function openMarkers(file) {
+      errorBox.textContent = '';
+      file.text().then((text) => {
+        let data = JSON.parse(text);
+        if (data && !Array.isArray(data)) data = data.markers;
+        if (!Array.isArray(data)) throw new Error('it does not contain a list of markers');
+        const list = data.filter((m) => m && Array.isArray(m.position) && m.position.length === 3 && m.position.every(Number.isFinite));
+        if (data.length && !list.length) throw new Error('none of its markers has a position');
+        pendingMarkers = { list, fileName: file.name, skipped: data.length - list.length };
+        const viewer = StepViewer.get(work);
+        if (viewer) {
+          loadStatus.textContent = 'Placing the markers from ' + file.name + ' once the model has loaded…';
+          // After loading: a viewer that is still starting would otherwise replace them with its own markers.
+          viewer.ready.then(applyPendingMarkers, () => {
+            loadStatus.textContent = 'The markers from ' + file.name + ' will be placed on the next model you open.';
+          });
+        }
+      }).catch((err) => {
+        errorBox.textContent = 'Could not read ' + file.name + ': ' + (err instanceof SyntaxError ? 'it is not valid JSON' : err.message) + '.';
+      });
+    }
+
+    document.getElementById('load-markers').addEventListener('click', () => markersInput.click());
+    markersInput.addEventListener('change', () => {
+      if (markersInput.files[0]) openMarkers(markersInput.files[0]);
+      markersInput.value = '';
+    });
 
     document.getElementById('load-file').addEventListener('click', () => input.click());
     input.addEventListener('change', () => {
@@ -336,7 +398,13 @@
       e.preventDefault();
       dragDepth = 0;
       work.classList.remove('drag-over');
-      if (e.dataTransfer.files[0]) open(e.dataTransfer.files[0]);
+      // A model, a markers file, or both at once.
+      const files = Array.from(e.dataTransfer.files);
+      const model = files.find((f) => /\.(step|stp|iges|igs|brep|brp)$/i.test(f.name));
+      const markers = files.find((f) => /\.json$/i.test(f.name));
+      if (model) open(model);
+      if (markers) openMarkers(markers);
+      if (!model && !markers && files[0]) open(files[0]); // explains what kind of file is needed
     });
 
     work.addEventListener('stepviewer:markerschange', render);

@@ -1392,6 +1392,10 @@
       try {
         res = await fetch(this.o.src);
       } catch (e) {
+        // Pages opened straight from disk (file://) may not fetch other files.
+        if (location.protocol === 'file:') {
+          throw new Error('Your browser does not let a page opened from disk load ' + name + '. Serve the folder (for example with python3 -m http.server), or open the model with a file picker.');
+        }
         throw new Error('Could not download ' + name + '.');
       }
       if (!res.ok) throw new Error('Could not download ' + name + ' (' + res.status + ' ' + res.statusText + ').');

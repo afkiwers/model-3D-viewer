@@ -172,7 +172,8 @@ Nobody wants to guess coordinates, so there is an editor.
 **The easy way:** open the [live demo](https://afkiwers.github.io/model-3D-viewer/#your-model), press
 **Load local file** and pick your model. Set which way is the front if the file arrives lying on its side,
 place and describe your markers, choose a marker style, a starting view and which buttons to offer, then copy
-the ready-made HTML and download the markers file. Your model is opened by your browser only:
+the ready-made HTML and download the markers file. To change markers you made earlier, open the model and
+then **Load markers file**. Your model is opened by your browser only:
 it is never uploaded and never leaves your computer.
 
 **On your own site:**
