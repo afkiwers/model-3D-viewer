@@ -6,13 +6,15 @@
 
 `index.html` shows two viewers using `models/Connector.stp`. It is published to GitHub Pages by
 `.github/workflows/pages.yml` each time a release is published (or when the workflow is run by hand
-from the Actions tab), so the live demo always shows the latest release. To run it locally instead
-(browsers won't load files from `file://`), serve the folder:
+from the Actions tab), so the live demo always shows the latest release.
 
-```sh
-python3 -m http.server 8000
-# then open http://localhost:8000
-```
+To try it locally, just open `index.html` in your browser; no server needed. Browsers don't let a page opened
+from disk fetch other files, so in that case the demo takes its sample model from `models/Connector.sample.js`
+(the same model and markers, packed into a script). Your own models still open with **Load local file**.
+The viewer libraries load from jsDelivr, so you need to be online. If you change the sample model, regenerate
+that file, or serve the folder instead (`python3 -m http.server`).
+
+Your own pages need a web server (or a wiki or CMS) for `data-src` to work, for the same reason.
 
 ## What it does
 

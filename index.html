@@ -258,6 +258,30 @@
   </div>
 </dialog>
 
+<script>
+  // Opened straight from disk (file://)? Browsers will not let the page fetch models/Connector.stp, but
+  // they do run script files. So the sample comes from models/Connector.sample.js instead and is handed
+  // to the viewers as a local file, the same way "Load local file" does it.
+  if (location.protocol === 'file:') {
+    const samples = document.querySelectorAll('.step-viewer[data-src="models/Connector.stp"]');
+    samples.forEach((el) => {
+      el.removeAttribute('data-src'); // keeps the viewers from starting before the sample is here
+      el.removeAttribute('data-markers');
+    });
+    const script = document.createElement('script');
+    script.src = 'models/Connector.sample.js';
+    script.onload = async () => {
+      const sample = window.STEP_VIEWER_SAMPLE;
+      const bytes = Uint8Array.from(atob(sample.gzipBase64), (c) => c.charCodeAt(0));
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      const file = new File([await new Response(stream).blob()], sample.name);
+      if (document.readyState === 'loading') await new Promise((done) => document.addEventListener('DOMContentLoaded', done));
+      // Each viewer gets its own copy of the markers, so editing one leaves the other alone.
+      samples.forEach((el) => StepViewer.create(el, { src: file, markers: JSON.parse(JSON.stringify(sample.markers)) }));
+    };
+    document.head.appendChild(script);
+  }
+</script>
 <script src="step-viewer.js"></script>
 <script>
   // Marker style switcher: applies to every viewer on the page, updates the HTML example,
