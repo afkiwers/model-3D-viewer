@@ -70,6 +70,7 @@
     info: true,            // show the file name and overall size
     help: true,            // show a short controls hint after loading
     markerSize: 30,        // marker diameter in pixels
+    pivot: 'rotate',       // centre of rotation indicator: 'rotate' (while turning), 'always' or 'off'
     markers: null,         // hotspots: URL of a JSON file, or an array (see README)
     editor: false,         // marker editor: click the model to place markers and copy their JSON
     theme: 'default',      // look of markers and cards: default | digital | military | agricultural
@@ -138,6 +139,12 @@
 .sv-dot.sv-hover{background:transparent;border:2px solid var(--sv-accent);box-shadow:0 0 0 1px #fff,inset 0 0 0 1px #fff}
 .sv-dot.sv-snap-corner{border-radius:2px}
 .sv-dot.sv-snap-edge{border-radius:2px;transform:rotate(45deg) scale(.9)}
+.sv-pivot{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;border:2px solid var(--sv-accent);pointer-events:none;
+  box-shadow:0 0 0 2px rgba(255,255,255,.8),inset 0 0 0 2px rgba(255,255,255,.8);opacity:0;transform:scale(.5);transition:opacity .25s,transform .25s}
+.sv-pivot::before,.sv-pivot::after{content:"";position:absolute;left:50%;top:50%;background:var(--sv-accent);box-shadow:0 0 0 1px rgba(255,255,255,.8)}
+.sv-pivot::before{width:2px;height:38px;margin:-19px 0 0 -1px}
+.sv-pivot::after{width:38px;height:2px;margin:-1px 0 0 -19px}
+.sv-pivot.sv-on{opacity:1;transform:none}
 .sv-label{position:absolute;display:flex;align-items:center;gap:4px;padding:2px 4px 2px 8px;border-radius:999px;background:#fff;color:#111827;border:1.5px solid var(--sv-accent);
   font-weight:600;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums;box-shadow:0 1px 4px rgba(0,0,0,.18);pointer-events:auto;transform:translate(-50%,-50%)}
 .sv-label.sv-live{padding-right:8px;pointer-events:none}
@@ -977,6 +984,7 @@
     o.zoom = Number(o.zoom) > 0 ? Number(o.zoom) : 1;
     o.up = String(o.up).toLowerCase() === 'y' ? 'y' : 'z';
     o.orbit = o.orbit === 'turntable' ? 'turntable' : 'free';
+    o.pivot = /^(always|off)$/.test(o.pivot) ? o.pivot : 'rotate';
     const cube = String(o.viewCube).toLowerCase();
     o.viewCube = /^(open|true|yes|on)$/.test(cube) ? 'open' : /^(off|false|no|0|none)$/.test(cube) ? 'off' : 'button';
     if (!UNITS[o.units]) o.units = 'mm';
@@ -1083,6 +1091,7 @@
 
     // Drag rotation. 'free' turns about the screen axes with no limits; 'turntable' keeps the up axis upright.
     rotate(dx, dy, free) {
+      this.viewer._showPivot();
       if (free || this.orbit !== 'turntable') {
         this.turn(-dx * this.rotateSpeed, -dy * this.rotateSpeed);
         return;
@@ -1905,6 +1914,7 @@
     _afterLoad() {
       const o = this.o;
       this.toolbar.hidden = false;
+      if (o.pivot === 'always') this._showPivot();
       if (o.viewCube === 'open') this.setViewCube(true);
       if (o.info) {
         const s = this.size;
@@ -1925,6 +1935,19 @@
           if (!this.measureMode) this._hint('');
         }, 6000);
       }
+    }
+
+    // Briefly shows where the model turns around (or keeps showing it with pivot: 'always').
+    _showPivot() {
+      if (this.o.pivot === 'off') return;
+      if (!this.pivotEl) {
+        this.pivotEl = el('div', 'sv-pivot');
+        this.layer.appendChild(this.pivotEl);
+      }
+      this.pivotEl.classList.add('sv-on');
+      clearTimeout(this._pivotTimer);
+      if (this.o.pivot !== 'always') this._pivotTimer = setTimeout(() => this.pivotEl.classList.remove('sv-on'), 900);
+      this.requestRender();
     }
 
     _interact() {
@@ -2255,7 +2278,10 @@
       stage.addEventListener('pointermove', (e) => {
         if (!drag) return;
         const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-        if (drag.spin) this.controls.spin(-dx * this.controls.rotateSpeed * 1.5);
+        if (drag.spin) {
+          this.controls.spin(-dx * this.controls.rotateSpeed * 1.5);
+          this._showPivot();
+        }
         else this.controls.rotate(dx * 1.4, dy * 1.4, true);
         drag.x = e.clientX;
         drag.y = e.clientY;
@@ -2712,12 +2738,15 @@
         }
       };
       // Double-click makes the clicked point the new centre of rotation.
+      // Double-click sets the centre of rotation: the point clicked on the model, or, on empty space,
+      // the middle of the model again.
       const onDbl = (e) => {
         if (this.measureMode || this.addMode) return;
         const hit = this._surfaceAt(e.clientX, e.clientY);
-        if (!hit) return;
-        const shift = hit.point.clone().sub(this.controls.target);
-        this.controls.animateTo(hit.point, this.camera.position.clone().add(shift), 350, this.camera.up.clone());
+        const pivot = hit ? hit.point : this.center.clone();
+        const shift = pivot.clone().sub(this.controls.target);
+        this.controls.animateTo(pivot, this.camera.position.clone().add(shift), 350, this.camera.up.clone());
+        this._showPivot();
       };
       c.addEventListener('pointerdown', onDown);
       c.addEventListener('pointerup', onUp);
@@ -2868,6 +2897,10 @@
 
       for (const mk of this.markers) place(mk.el, toScreen(mk.pos));
       this._drawGizmo();
+      if (this.pivotEl) {
+        v.copy(this.controls.target).project(this.camera);
+        place(this.pivotEl, v.z < -1 || v.z > 1 ? null : { x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h });
+      }
       this._placeCard(w, h, toScreen);
 
       if (!this.hoverDot) {

@@ -22,7 +22,8 @@ A drop-in 3D viewer for STEP files on your website. Plain JavaScript in one file
 no framework. Point it at a `.step` / `.stp` file on your server and visitors get:
 
 * **Orbit, pan and zoom** with mouse, trackpad or touch. Zoom goes towards the cursor, and a
-  double-click makes that point the new centre of rotation.
+  double-click makes that point the new centre of rotation (double-click empty space to put it back in the
+  middle of the model). A crosshair shows the centre of rotation while you turn the model.
 * **A view cube** in the corner: click a face, edge or corner to look from there (26 views), drag the cube
   to turn the model, drag the compass ring to spin it, and roll it in 90° steps.
 * **A ruler** that snaps to corners and edges and shows the distance plus ΔX / ΔY / ΔZ.
@@ -94,6 +95,7 @@ In HTML, `downloadName` becomes `data-download-name` and so on.
 | `markers` | none | Markers: URL of a JSON file, or an array in JavaScript. See [Markers](#markers). |
 | `editor` | `false` | Marker editor: place markers by clicking and copy their JSON. |
 | `markerSize` | `30` | Marker diameter in pixels. |
+| `pivot` | `rotate` | Crosshair at the centre of rotation: `rotate` (while turning the model), `always` or `off`. |
 | `theme` | `default` | Look of the markers and their cards: `default`, `digital`, `military` or `agricultural`. See [Marker themes](#marker-themes). |
 | `views` | `true` | Show the standard views menu. |
 | `fullscreen` | `true` | Show the fullscreen button. |
